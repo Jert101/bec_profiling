@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import AppProvider from "@/components/AppProvider";
 import RootGate from "@/components/RootGate";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -22,6 +23,21 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Resident Profiling Database",
   description: "Record and search resident profiles during barangay visits",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/icons/icon-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "BEC Profiler",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1B4D4A",
 };
 
 export default function RootLayout(props: LayoutProps<"/">) {
@@ -31,6 +47,7 @@ export default function RootLayout(props: LayoutProps<"/">) {
         <AppProvider>
           <RootGate>{props.children}</RootGate>
         </AppProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
