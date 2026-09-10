@@ -25,8 +25,7 @@ export const metadata: Metadata = {
   description: "Record and search resident profiles during barangay visits",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
+    icon: "/favicon.ico",
     apple: "/icons/icon-192.png",
   },
   appleWebApp: {
