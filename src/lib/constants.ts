@@ -40,6 +40,18 @@ export const PARISH_OPTIONS = [
   "Other / Outside Iligan City",
 ];
 
+export const MATRIMONY_OPTIONS = ["Civil", "Church"];
+
+export const SACRAMENT_OPTIONS = [
+  "Baptism",
+  "Confirmation",
+  "Eucharist",
+  "Confession",
+  "Anointing of the Sick",
+  "Holy Orders",
+  "Matrimony",
+];
+
 export const FLAG_OPTIONS: { key: "is_pwd" | "is_senior" | "is_4ps" | "is_indigent" | "consent_given"; label: string }[] = [
   { key: "is_pwd", label: "PWD" },
   { key: "is_senior", label: "Senior citizen" },

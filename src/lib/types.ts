@@ -9,6 +9,10 @@ export interface Resident {
   civil_status: string | null;
   religion: string | null;
   parish: string | null;
+  matrimony: string | null;
+  matrimony_date: string | null;
+  bec_cell_name: string | null;
+  sacraments: string[];
   barangay: string | null;
   street_sitio: string | null;
   city_municipality: string | null;
@@ -40,6 +44,10 @@ export type ResidentForm = {
   civil_status: string;
   religion: string;
   parish: string;
+  matrimony: string;
+  matrimony_date: string;
+  bec_cell_name: string;
+  sacraments: string[];
   barangay: string;
   street_sitio: string;
   city_municipality: string;
@@ -121,6 +129,10 @@ export function emptyForm(): ResidentForm {
     civil_status: "",
     religion: "",
     parish: "",
+    matrimony: "",
+    matrimony_date: "",
+    bec_cell_name: "",
+    sacraments: [],
     barangay: "",
     street_sitio: "",
     city_municipality: "",

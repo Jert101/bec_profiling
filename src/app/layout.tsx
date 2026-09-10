@@ -29,9 +29,9 @@ export default function RootLayout(props: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${sourceSerif.variable} ${jetbrains.variable}`}>
       <body className="h-screen font-sans antialiased">
         <AppProvider>
-          <div className="grid h-full grid-cols-[64px_1fr]">
+          <div className="grid h-full grid-cols-[52px_1fr] sm:grid-cols-[64px_1fr]">
             <LedgerSidebar />
-            <main className="h-full overflow-y-auto">{props.children}</main>
+            <main className="h-full min-w-0 overflow-y-auto">{props.children}</main>
           </div>
         </AppProvider>
       </body>

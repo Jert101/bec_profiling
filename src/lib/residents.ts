@@ -10,6 +10,7 @@ const SEARCH_COLUMNS = [
   "occupation",
   "contact_number",
   "religion",
+  "bec_cell_name",
 ] as const;
 
 export async function searchResidents(query = ""): Promise<Resident[]> {
@@ -96,6 +97,10 @@ function toDb(form: ResidentForm) {
     civil_status: emptyToNull("civil_status"),
     religion: emptyToNull("religion"),
     parish: emptyToNull("parish"),
+    matrimony: emptyToNull("matrimony"),
+    matrimony_date: emptyToNull("matrimony_date") || null,
+    bec_cell_name: emptyToNull("bec_cell_name"),
+    sacraments: Array.isArray(form.sacraments) ? form.sacraments : [],
     barangay: emptyToNull("barangay"),
     street_sitio: emptyToNull("street_sitio"),
     city_municipality: emptyToNull("city_municipality"),

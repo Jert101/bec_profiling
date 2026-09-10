@@ -13,6 +13,10 @@ function toForm(r: Resident): ResidentForm {
     civil_status: r.civil_status ?? "",
     religion: r.religion ?? "",
     parish: r.parish ?? "",
+    matrimony: r.matrimony ?? "",
+    matrimony_date: r.matrimony_date ?? "",
+    bec_cell_name: r.bec_cell_name ?? "",
+    sacraments: r.sacraments ?? [],
     barangay: r.barangay ?? "",
     street_sitio: r.street_sitio ?? "",
     city_municipality: r.city_municipality ?? "",
@@ -40,7 +44,7 @@ export default async function ResidentDetailPage(props: PageProps<"/records/[id]
 
   if (!resident) {
     return (
-      <div className="mx-auto max-w-[1100px] px-10 pb-16 pt-7">
+      <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
         <div className="rounded-md border border-line bg-white px-8 py-16 text-center text-slate-light">
           <h1 className="mb-2 font-serif text-xl text-slate-light">Record not found</h1>
           <p className="text-sm">
@@ -52,7 +56,7 @@ export default async function ResidentDetailPage(props: PageProps<"/records/[id]
   }
 
   return (
-    <div className="mx-auto max-w-[1100px] px-10 pb-16 pt-7">
+    <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
       <RecordForm id={resident.id} initial={toForm(resident)} isNew={false} />
     </div>
   );

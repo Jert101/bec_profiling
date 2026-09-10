@@ -43,9 +43,9 @@ function RecordsApp() {
   };
 
   return (
-    <div className="mx-auto max-w-[1100px] px-10 pb-16 pt-7">
+    <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
       <div className="mb-6 flex flex-wrap items-center gap-4">
-        <div className="relative min-w-[280px] flex-1">
+        <div className="relative w-full min-w-0 flex-1 sm:min-w-[280px]">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-light" />
           <input
             type="text"
@@ -57,7 +57,7 @@ function RecordsApp() {
         </div>
 
         {stats && (
-          <div className="whitespace-nowrap rounded-md border border-line bg-white px-4.5 py-2.5 text-[13px] text-slate-light">
+          <div className="w-full rounded-md border border-line bg-white px-4.5 py-2.5 text-[13px] text-slate-light sm:w-auto sm:whitespace-nowrap">
             <strong className="font-serif text-base font-bold text-teal-dark">
               {stats.total}
             </strong>{" "}

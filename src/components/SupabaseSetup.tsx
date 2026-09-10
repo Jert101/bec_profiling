@@ -1,6 +1,6 @@
 export default function SupabaseSetup() {
   return (
-    <div className="mx-auto max-w-[1100px] px-10 pb-16 pt-10">
+    <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-10 sm:px-6 lg:px-10">
       <div className="rounded-md border border-line bg-white px-8 py-12">
         <h1 className="mb-4 font-serif text-2xl text-teal-dark">
           Supabase not configured

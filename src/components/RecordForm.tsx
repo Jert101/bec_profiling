@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import type { FamilyMember, ResidentForm } from "@/lib/types";
 import { initials, fullName } from "@/lib/types";
-import { FLAG_OPTIONS, RELIGION_OPTIONS, PARISH_OPTIONS, CIVIL_STATUS_OPTIONS, SEX_OPTIONS } from "@/lib/constants";
+import { FLAG_OPTIONS, RELIGION_OPTIONS, PARISH_OPTIONS, CIVIL_STATUS_OPTIONS, SEX_OPTIONS, MATRIMONY_OPTIONS, SACRAMENT_OPTIONS } from "@/lib/constants";
 import {
   createResident,
   updateResident,
@@ -148,7 +148,7 @@ export default function RecordForm({
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Link
             href="/records"
             className="whitespace-nowrap rounded-md border border-line bg-white px-4 py-2.5 text-sm font-semibold text-teal transition hover:border-teal"
@@ -192,6 +192,31 @@ export default function RecordForm({
             <FormField type="select" label="Religion" name="religion" value={form.religion} onChange={(v) => set("religion", v)} options={RELIGION_OPTIONS} />
             <FormField type="select" label="Parish" name="parish" value={form.parish} onChange={(v) => set("parish", v)} options={PARISH_OPTIONS} />
             <FormField label="Occupation" name="occupation" value={form.occupation} onChange={(v) => set("occupation", v)} />
+            <FormField type="select" label="Matrimony" name="matrimony" value={form.matrimony} onChange={(v) => set("matrimony", v)} options={MATRIMONY_OPTIONS} />
+            <FormField type="date" label="Matrimony date" name="matrimony_date" value={form.matrimony_date} onChange={(v) => set("matrimony_date", v)} />
+            <FormField label="BEC / Cell Name" name="bec_cell_name" value={form.bec_cell_name} onChange={(v) => set("bec_cell_name", v)} placeholder="e.g. San Jose BEC" />
+          </div>
+          <div className="mt-4 flex flex-col gap-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-light">
+              Sacraments
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {SACRAMENT_OPTIONS.map((s) => (
+                <Chip
+                  key={s}
+                  label={s}
+                  checked={form.sacraments.includes(s)}
+                  onChange={(checked) =>
+                    set(
+                      "sacraments",
+                      checked
+                        ? [...form.sacraments, s]
+                        : form.sacraments.filter((x) => x !== s),
+                    )
+                  }
+                />
+              ))}
+            </div>
           </div>
         </Section>
 

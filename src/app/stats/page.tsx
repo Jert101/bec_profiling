@@ -17,7 +17,7 @@ function StatsApp() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1100px] px-10 pb-16 pt-7">
+    <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
       <div className="mb-6">
         <h1 className="font-serif text-[26px] text-teal-dark">Religion breakdown</h1>
         <div className="mt-1 text-sm text-slate-light">
@@ -44,7 +44,7 @@ function StatsApp() {
           {stats.religionBreakdown.map((row) => (
             <div
               key={row.religion}
-              className="mb-3 grid grid-cols-[160px_1fr_70px] items-center gap-3 text-[13px] last:mb-0"
+              className="mb-3 grid grid-cols-[120px_1fr_60px] items-center gap-3 text-[13px] last:mb-0 sm:grid-cols-[160px_1fr_70px]"
             >
               <span className="truncate">{row.religion}</span>
               <div className="h-2.5 overflow-hidden rounded-full bg-sage-light">
