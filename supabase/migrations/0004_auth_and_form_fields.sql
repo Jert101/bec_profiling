@@ -28,7 +28,7 @@ CREATE OR REPLACE FUNCTION app_login(pin TEXT)
 RETURNS TEXT
 LANGUAGE sql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
     SELECT role FROM app_users
     WHERE code_hash = encode(digest(pin, 'sha256'), 'hex')
@@ -43,7 +43,7 @@ CREATE OR REPLACE FUNCTION app_change_code(target_key TEXT, new_pin TEXT, admin_
 RETURNS TEXT
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
     updated_role TEXT;
