@@ -19,11 +19,6 @@ export const DEFAULT_FORM_FIELDS: FormFieldConfig[] = [
     name: "civil_status", section: "Personal information", label: "Civil status", type: "select",
     options: ["Single", "Married", "Widowed", "Separated", "Annulled", "Live-in"], required: false, enabled: true, sort_order: 16,
   },
-  {
-    name: "religion", section: "Personal information", label: "Religion", type: "select",
-    options: ["Roman Catholic", "Iglesia ni Cristo", "Islam", "Protestant", "Seventh-day Adventist", "Jehovah's Witnesses", "Aglipayan", "Born Again Christian", "Other", "None / Prefer not to say"],
-    required: false, enabled: true, sort_order: 17,
-  },
   { name: "vicariate", section: "Personal information", label: "Vicariate", type: "select", options: [], required: false, enabled: true, sort_order: 18 },
   {
     name: "parish", section: "Personal information", label: "Parish", type: "select",

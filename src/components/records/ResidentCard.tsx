@@ -24,17 +24,6 @@ export default function ResidentCard({ resident: r }: { resident: Resident }) {
         </span>
         {r.contact_number ? <span className="font-mono">{r.contact_number}</span> : null}
       </div>
-      {r.religion ? (
-        <span
-          className={`mt-2 inline-block rounded px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
-            r.religion === "Roman Catholic"
-              ? "bg-gold-light text-[#8A6A1F]"
-              : "bg-sage-light text-teal-dark"
-          }`}
-        >
-          {r.religion}
-        </span>
-      ) : null}
     </Link>
   );
 }

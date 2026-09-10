@@ -18,7 +18,6 @@ function toForm(r: Resident): ResidentForm {
     sex: r.sex ?? "",
     date_of_birth: r.date_of_birth ?? "",
     civil_status: r.civil_status ?? "",
-    religion: r.religion ?? "",
     vicariate: r.vicariate ?? "",
     parish: r.parish ?? "",
     matrimony: r.matrimony ?? "",

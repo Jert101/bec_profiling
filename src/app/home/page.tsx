@@ -3,24 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Building2, Church, Plus, Users } from "lucide-react";
-import { getStats, getVicariates, searchResidents } from "@/lib/residents";
+import { getVicariates, searchResidents } from "@/lib/residents";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import type { Resident, Stats, Vicariate } from "@/lib/types";
-import { fullName } from "@/lib/types";
+import type { Resident, Vicariate } from "@/lib/types";
+import { calcAge, fullName } from "@/lib/types";
 import PageGuard from "@/components/PageGuard";
 import SupabaseSetup from "@/components/SupabaseSetup";
 
 function HomeApp() {
-  const [stats, setStats] = useState<Stats | null>(null);
   const [vicariates, setVicariates] = useState<Vicariate[]>([]);
   const [residents, setResidents] = useState<Resident[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
-    getStats()
-      .then((s) => alive && setStats(s))
-      .catch((e: Error) => alive && setError(e.message));
     getVicariates()
       .then((v) => alive && setVicariates(v))
       .catch(() => {});
@@ -41,11 +37,16 @@ function HomeApp() {
 
   const parishCount = vicariates.reduce((n, v) => n + v.parishes.length, 0);
 
+  const seniors = residents.filter((r) => {
+    const age = calcAge(r.date_of_birth);
+    return age !== null && age >= 60;
+  }).length;
+
   const statCards = [
     { label: "Total members", value: residents.length, icon: Users, href: "/records" },
-    { label: "Catholic members", value: stats?.catholic ?? 0, icon: Church, href: "/records" },
+    { label: "Seniors (60+)", value: seniors, icon: Users, href: "/records" },
     { label: "Vicariates", value: vicariates.length, icon: Building2, href: "/records" },
-    { label: "Parishes", value: parishCount, icon: Building2, href: "/records" },
+    { label: "Parishes", value: parishCount, icon: Church, href: "/records" },
   ];
 
   return (
@@ -83,7 +84,7 @@ function HomeApp() {
               <card.icon className="h-5 w-5" />
             </span>
             <span className="block font-serif text-[26px] font-bold leading-none text-teal-dark">
-              {residents.length === 0 && stats === null && vicariates.length === 0 ? "–" : card.value}
+              {residents.length === 0 && vicariates.length === 0 ? "–" : card.value}
             </span>
             <span className="mt-1 block text-[13px] text-slate-light">{card.label}</span>
           </Link>

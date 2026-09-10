@@ -18,19 +18,6 @@ export const CIVIL_STATUS_OPTIONS = [
   "Live-in",
 ];
 
-export const RELIGION_OPTIONS = [
-  "Roman Catholic",
-  "Iglesia ni Cristo",
-  "Islam",
-  "Protestant",
-  "Seventh-day Adventist",
-  "Jehovah's Witnesses",
-  "Aglipayan",
-  "Born Again Christian",
-  "Other",
-  "None / Prefer not to say",
-];
-
 export const PARISH_OPTIONS = [
   "St. Michael the Archangel Cathedral",
   "San Lorenzo Ruiz Parish",

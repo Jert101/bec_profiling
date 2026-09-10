@@ -7,7 +7,6 @@ export interface Resident {
   sex: string | null;
   date_of_birth: string | null;
   civil_status: string | null;
-  religion: string | null;
   vicariate: string | null;
   parish: string | null;
   matrimony: string | null;
@@ -33,7 +32,6 @@ export type ResidentForm = {
   sex: string;
   date_of_birth: string;
   civil_status: string;
-  religion: string;
   vicariate: string;
   parish: string;
   matrimony: string;
@@ -50,16 +48,8 @@ export type ResidentForm = {
   recorded_by: string;
 };
 
-export interface ReligionStat {
-  religion: string | null;
-  count: number;
-}
-
 export interface Stats {
   total: number;
-  catholic: number;
-  catholicPct: number;
-  religionBreakdown: { religion: string; count: number; pct: number }[];
 }
 
 export interface FamilyStats {
@@ -149,7 +139,6 @@ export function emptyForm(): ResidentForm {
     sex: "",
     date_of_birth: "",
     civil_status: "",
-    religion: "",
     vicariate: "",
     parish: "",
     matrimony: "",

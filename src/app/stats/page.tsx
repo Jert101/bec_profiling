@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getFamilyStats, getStats, getVicariates, searchResidents } from "@/lib/residents";
+import { getFamilyStats, getVicariates, searchResidents } from "@/lib/residents";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import type { FamilyStats, Resident, Stats, Vicariate } from "@/lib/types";
+import type { FamilyStats, Resident, Vicariate } from "@/lib/types";
 import { calcAge } from "@/lib/types";
 import { SACRAMENT_OPTIONS } from "@/lib/constants";
 import SupabaseSetup from "@/components/SupabaseSetup";
@@ -68,7 +68,6 @@ function EmptyHint({ text }: { text: string }) {
 }
 
 function StatsApp() {
-  const [stats, setStats] = useState<Stats | null>(null);
   const [residents, setResidents] = useState<Resident[]>([]);
   const [vicariates, setVicariates] = useState<Vicariate[]>([]);
   const [familyStats, setFamilyStats] = useState<FamilyStats | null>(null);
@@ -76,9 +75,6 @@ function StatsApp() {
 
   useEffect(() => {
     let alive = true;
-    getStats()
-      .then(setStats)
-      .catch((e: Error) => alive && setError(e.message));
     getVicariates()
       .then((v) => alive && setVicariates(v))
       .catch(() => {});
@@ -111,7 +107,8 @@ function StatsApp() {
   const male = sexBuckets.find((b) => b.label === "Male")?.count ?? 0;
   const female = sexBuckets.find((b) => b.label === "Female")?.count ?? 0;
   const seniors = ageBuckets.find((b) => b.label === "Senior (60+)")?.count ?? 0;
-const countInParish = (vicName: string, parishName: string) =>
+  const parishCount = vicariates.reduce((n, v) => n + v.parishes.length, 0);
+  const countInParish = (vicName: string, parishName: string) =>
     residents.filter((r) => r.vicariate === vicName && r.parish === parishName).length;
 
   const summary = [
@@ -119,7 +116,7 @@ const countInParish = (vicName: string, parishName: string) =>
     { label: "Male", value: male },
     { label: "Female", value: female },
     { label: "Seniors (60+)", value: seniors },
-    { label: "Catholic", value: stats?.catholic ?? 0 },
+    { label: "Parishes", value: parishCount },
     { label: "Family members", value: familyStats?.total ?? 0 },
   ];
 
@@ -150,22 +147,6 @@ const countInParish = (vicName: string, parishName: string) =>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Block title="Religion">
-          {!stats || stats.total === 0 ? (
-            <EmptyHint text="Add resident records to see the religion breakdown." />
-          ) : (
-            stats.religionBreakdown.map((row) => (
-              <BarRow
-                key={row.religion}
-                label={row.religion}
-                count={row.count}
-                pct={row.pct}
-                barClass={row.religion === "Roman Catholic" ? "bg-gold" : "bg-teal"}
-              />
-            ))
-          )}
-        </Block>
-
         <Block title="Sex">
           {sexBuckets.length === 0 ? (
             <EmptyHint text="No sex information recorded yet." />

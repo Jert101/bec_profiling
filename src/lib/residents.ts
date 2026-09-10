@@ -18,7 +18,6 @@ const SEARCH_COLUMNS = [
   "city_municipality",
   "occupation",
   "contact_number",
-  "religion",
   "vicariate",
   "parish",
   "bec_cell_name",
@@ -61,34 +60,11 @@ export async function getTotalCount(): Promise<number> {
 }
 
 export async function getStats(): Promise<Stats> {
-  const { data, error, count } = await supabase
+  const { count, error } = await supabase
     .from("residents")
-    .select("religion", { count: "exact" });
+    .select("*", { count: "exact", head: true });
   if (error) throw new Error(error.message);
-
-  const total = count ?? 0;
-  const map = new Map<string, number>();
-  for (const row of data ?? []) {
-    const rel = row.religion || "(Not specified)";
-    map.set(rel, (map.get(rel) ?? 0) + 1);
-  }
-
-  const breakdown = [...map.entries()]
-    .map(([religion, cnt]) => ({
-      religion,
-      count: cnt,
-      pct: total ? Math.round((cnt / total) * 1000) / 10 : 0,
-    }))
-    .sort((a, b) => b.count - a.count);
-
-  const catholic = map.get("Roman Catholic") ?? 0;
-
-  return {
-    total,
-    catholic,
-    catholicPct: total ? Math.round((catholic / total) * 1000) / 10 : 0,
-    religionBreakdown: breakdown,
-  };
+  return { total: count ?? 0 };
 }
 
 export async function getFamilyStats(): Promise<FamilyStats> {
@@ -121,7 +97,6 @@ function toDb(form: ResidentForm) {
     sex: emptyToNull("sex"),
     date_of_birth: emptyToNull("date_of_birth") || null,
     civil_status: emptyToNull("civil_status"),
-    religion: emptyToNull("religion"),
     vicariate: emptyToNull("vicariate"),
     parish: emptyToNull("parish"),
     matrimony: emptyToNull("matrimony"),

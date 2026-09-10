@@ -141,11 +141,7 @@ function RecordsApp() {
             <strong className="font-serif text-base font-bold text-teal-dark">
               {stats.total}
             </strong>{" "}
-            records ·{" "}
-            <span className="text-[#8A6A1F]">
-              <strong className="font-serif text-base font-bold">{stats.catholic}</strong>{" "}
-              Catholic ({stats.catholicPct}%)
-            </span>
+            {stats.total === 1 ? "record" : "records"}
           </div>
         )}
 
