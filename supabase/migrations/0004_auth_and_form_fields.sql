@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS form_fields (
 );
 
 ALTER TABLE form_fields ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "form_fields_all_access" ON form_fields;
 CREATE POLICY "form_fields_all_access" ON form_fields
   FOR ALL USING (true) WITH CHECK (true);
 
