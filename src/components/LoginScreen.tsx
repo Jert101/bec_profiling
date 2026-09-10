@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { KeyRound } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
 
@@ -35,9 +36,14 @@ export default function LoginScreen() {
         className="w-full max-w-sm rounded-md border border-line bg-white p-8 shadow-[0_4px_20px_rgba(27,77,74,0.08)]"
       >
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 rotate-180 items-center justify-center rounded-full bg-teal font-serif text-lg font-bold text-cream [writing-mode:vertical-rl]">
-            KZ
-          </div>
+          <Image
+            src="/logo.png"
+            alt="Resident Profiling Database logo"
+            width={48}
+            height={48}
+            className="h-12 w-12 rounded-full object-cover"
+            priority
+          />
           <div>
             <h1 className="font-serif text-xl text-teal-dark">
               Resident Profiling Database

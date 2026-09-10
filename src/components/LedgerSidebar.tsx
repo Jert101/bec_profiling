@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { getTotalCount } from "@/lib/residents";
 import { useApp } from "@/components/AppProvider";
@@ -39,9 +40,14 @@ export default function LedgerSidebar() {
 
   return (
     <nav className="flex flex-col items-center gap-1 bg-teal pt-5 text-cream">
-      <div className="mb-7 rotate-180 p-2 text-center font-serif text-[22px] font-bold tracking-widest [writing-mode:vertical-rl]">
-        KZ
-      </div>
+      <Image
+        src="/logo.png"
+        alt="Logo"
+        width={40}
+        height={40}
+        className="mb-6 h-10 w-10 rounded-full object-cover"
+        priority
+      />
 
       {tabs.map((tab) => (
         <Link
