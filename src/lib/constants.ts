@@ -60,11 +60,3 @@ export const SACRAMENT_OPTIONS = [
   "Holy Orders",
   "Matrimony",
 ];
-
-export const FLAG_OPTIONS: { key: "is_pwd" | "is_senior" | "is_4ps" | "is_indigent" | "consent_given"; label: string }[] = [
-  { key: "is_pwd", label: "PWD" },
-  { key: "is_senior", label: "Senior citizen" },
-  { key: "is_4ps", label: "4Ps beneficiary" },
-  { key: "is_indigent", label: "Indigent" },
-  { key: "consent_given", label: "Consent given" },
-];

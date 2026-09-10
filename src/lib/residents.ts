@@ -96,7 +96,6 @@ function toDb(form: ResidentForm) {
     return typeof v === "string" && v.trim() === "" ? null : v;
   };
 
-  const members = emptyToNull("household_members");
   return {
     first_name: form.first_name.trim(),
     middle_name: emptyToNull("middle_name"),
@@ -118,18 +117,6 @@ function toDb(form: ResidentForm) {
     province: emptyToNull("province"),
     contact_number: emptyToNull("contact_number"),
     occupation: emptyToNull("occupation"),
-    mother_name: emptyToNull("mother_name"),
-    father_name: emptyToNull("father_name"),
-    household_number: emptyToNull("household_number"),
-    household_members: members === null || members === "" || members === undefined
-      ? null
-      : Number(members),
-    household_head: emptyToNull("household_head"),
-    is_pwd: form.is_pwd,
-    is_senior: form.is_senior,
-    is_4ps: form.is_4ps,
-    is_indigent: form.is_indigent,
-    consent_given: form.consent_given,
     notes: emptyToNull("notes"),
     recorded_by: emptyToNull("recorded_by"),
   };
@@ -138,23 +125,13 @@ function toDb(form: ResidentForm) {
 export function validateForm(form: ResidentForm, fields: FormFieldConfig[]): string | null {
   for (const f of fields) {
     if (!f.enabled || !f.required) continue;
-    if (f.type === "flag") continue;
     const value = form[f.name as keyof ResidentForm];
     if (Array.isArray(value)) {
       if (value.length === 0) return `${f.label} is required.`;
     } else {
       const v = typeof value === "string" ? value.trim() : value;
-      if (!v && v !== false) return `${f.label} is required.`;
+      if (!v) return `${f.label} is required.`;
     }
-  }
-  const members = form.household_members;
-  if (
-    members !== "" &&
-    members !== null &&
-    members !== undefined &&
-    Number.isNaN(Number(members))
-  ) {
-    return "Household Members must be a number.";
   }
   return null;
 }

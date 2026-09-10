@@ -20,16 +20,6 @@ export interface Resident {
   province: string | null;
   contact_number: string | null;
   occupation: string | null;
-  mother_name: string | null;
-  father_name: string | null;
-  household_number: string | null;
-  household_members: number | null;
-  household_head: string | null;
-  is_pwd: boolean;
-  is_senior: boolean;
-  is_4ps: boolean;
-  is_indigent: boolean;
-  consent_given: boolean;
   notes: string | null;
   recorded_by: string | null;
   date_recorded: string;
@@ -56,16 +46,6 @@ export type ResidentForm = {
   province: string;
   contact_number: string;
   occupation: string;
-  mother_name: string;
-  father_name: string;
-  household_number: string;
-  household_members: string;
-  household_head: string;
-  is_pwd: boolean;
-  is_senior: boolean;
-  is_4ps: boolean;
-  is_indigent: boolean;
-  consent_given: boolean;
   notes: string;
   recorded_by: string;
 };
@@ -175,16 +155,6 @@ export function emptyForm(): ResidentForm {
     province: "",
     contact_number: "",
     occupation: "",
-    mother_name: "",
-    father_name: "",
-    household_number: "",
-    household_members: "",
-    household_head: "",
-    is_pwd: false,
-    is_senior: false,
-    is_4ps: false,
-    is_indigent: false,
-    consent_given: false,
     notes: "",
     recorded_by: "",
   };

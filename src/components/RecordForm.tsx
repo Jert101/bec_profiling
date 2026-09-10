@@ -23,7 +23,7 @@ import { useApp } from "@/components/AppProvider";
 import FormField from "@/components/ui/FormField";
 import Section from "@/components/ui/Section";
 import Chip from "@/components/ui/Chip";
-import AddressSection from "@/components/form/AddressSection";
+import AddressFields, { ADDRESS_FIELD_NAMES } from "@/components/form/AddressSection";
 import NotesSection from "@/components/form/NotesSection";
 import FamilySection from "@/components/form/FamilySection";
 import type { FamilyRow } from "@/components/form/FamilySection";
@@ -268,34 +268,12 @@ export default function RecordForm({
   };
 
   const renderStandardSection = (section: string, fs: FormFieldConfig[]) => {
-    const flags = fs.filter((f) => f.type === "flag");
-    const standard = fs.filter((f) => f.type !== "flag");
-
-    if (section === "Address") {
-      return (
-        <AddressSection
-          key={section}
-          fields={fs}
-          province={form.province}
-          city={form.city_municipality}
-          barangay={form.barangay}
-          streetSitio={form.street_sitio}
-          contactNumber={form.contact_number}
-          disabled={readOnly}
-          onProvince={(v) => {
-            setValue("province", v);
-            setForm((prev) => ({ ...prev, city_municipality: "", barangay: "" }));
-          }}
-          onCity={(v) => {
-            setValue("city_municipality", v);
-            setForm((prev) => ({ ...prev, barangay: "" }));
-          }}
-          onBarangay={(v) => setValue("barangay", v)}
-          onStreetSitio={(v) => setValue("street_sitio", v)}
-          onContactNumber={(v) => setValue("contact_number", v)}
-        />
-      );
-    }
+    const addressFields = fs.filter(
+      (f) => (ADDRESS_FIELD_NAMES as readonly string[]).includes(f.name) && f.enabled,
+    );
+    const standard = fs.filter(
+      (f) => !(ADDRESS_FIELD_NAMES as readonly string[]).includes(f.name),
+    );
 
     if (section === "Notes") {
       return (
@@ -316,54 +294,31 @@ export default function RecordForm({
       return <FamilySection key={section} members={family} onChange={handleFamilyChange} readOnly={readOnly} />;
     }
 
-    if (section === "Flags & consent" && flags.length > 0) {
-      return (
-        <Section key={section} title={section}>
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {flags.map((f) => {
-              const checked = Boolean(form[f.name as keyof ResidentForm]);
-              return (
-                <div
-                  key={f.name}
-                  className="flex items-center justify-between gap-3 rounded-md border border-line bg-cream/40 px-3.5 py-2.5"
-                >
-                  <span className="text-sm font-medium text-slate">{f.label}</span>
-                  <button
-                    type="button"
-                    disabled={readOnly}
-                    onClick={() => setValue(f.name as keyof ResidentForm, !checked)}
-                    className={`w-16 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                      checked
-                        ? "border-sage bg-sage-light text-teal-dark"
-                        : "border-line bg-white text-slate-light"
-                    }`}
-                  >
-                    {checked ? "Yes" : "No"}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </Section>
-      );
-    }
-
-    if (flags.length === 0 && standard.length === 0) return null;
+    if (addressFields.length === 0 && standard.length === 0) return null;
 
     return (
       <Section key={section} title={section}>
-        {flags.length > 0 && (
-          <div className={`flex flex-wrap gap-2.5 ${standard.length > 0 ? "mb-4" : ""}`}>
-            {flags.map((f) => (
-              <Chip
-                key={f.name}
-                label={f.label}
-                checked={Boolean(form[f.name as keyof ResidentForm])}
-                disabled={readOnly}
-                onChange={(v) => setValue(f.name as keyof ResidentForm, v)}
-              />
-            ))}
-          </div>
+        {addressFields.length > 0 && (
+          <AddressFields
+            fields={fs}
+            province={form.province}
+            city={form.city_municipality}
+            barangay={form.barangay}
+            streetSitio={form.street_sitio}
+            contactNumber={form.contact_number}
+            disabled={readOnly}
+            onProvince={(v) => {
+              setValue("province", v);
+              setForm((prev) => ({ ...prev, city_municipality: "", barangay: "" }));
+            }}
+            onCity={(v) => {
+              setValue("city_municipality", v);
+              setForm((prev) => ({ ...prev, barangay: "" }));
+            }}
+            onBarangay={(v) => setValue("barangay", v)}
+            onStreetSitio={(v) => setValue("street_sitio", v)}
+            onContactNumber={(v) => setValue("contact_number", v)}
+          />
         )}
         {standard.length > 0 && (
           <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-3">
@@ -373,9 +328,6 @@ export default function RecordForm({
       </Section>
     );
   };
-
-  const addressGroup = groups.find((g) => g.section === "Address");
-  const filteredGroups = addressGroup ? [...groups].filter((g) => g.section !== "Address") : groups;
 
   return (
     <div>
@@ -435,8 +387,7 @@ export default function RecordForm({
           handleSave();
         }}
       >
-        {addressGroup && renderStandardSection(addressGroup.section, addressGroup.fields)}
-        {filteredGroups.map((g) => renderStandardSection(g.section, g.fields))}
+        {groups.map((g) => renderStandardSection(g.section, g.fields))}
       </form>
     </div>
   );

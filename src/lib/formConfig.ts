@@ -2,11 +2,7 @@ import type { FormFieldConfig } from "./types";
 
 export const SECTIONS = [
   "Personal information",
-  "Address",
-  "Family",
   "Family members",
-  "Household",
-  "Flags & consent",
   "Notes",
 ] as const;
 
@@ -44,25 +40,13 @@ export const DEFAULT_FORM_FIELDS: FormFieldConfig[] = [
     required: false, enabled: true, sort_order: 24,
   },
 
-  { name: "province", section: "Address", label: "Province", type: "select", options: [], required: false, enabled: true, sort_order: 30 },
-  { name: "city_municipality", section: "Address", label: "City / Municipality", type: "select", options: [], required: false, enabled: true, sort_order: 31 },
-  { name: "barangay", section: "Address", label: "Barangay", type: "select", options: [], required: false, enabled: true, sort_order: 32 },
-  { name: "street_sitio", section: "Address", label: "Street / Sitio", type: "text", options: [], required: false, enabled: true, sort_order: 33 },
-  { name: "contact_number", section: "Address", label: "Contact number", type: "text", options: [], required: false, enabled: true, sort_order: 34 },
+  { name: "province", section: "Personal information", label: "Province", type: "select", options: [], required: false, enabled: true, sort_order: 25 },
+  { name: "city_municipality", section: "Personal information", label: "City / Municipality", type: "select", options: [], required: false, enabled: true, sort_order: 26 },
+  { name: "barangay", section: "Personal information", label: "Barangay", type: "select", options: [], required: false, enabled: true, sort_order: 27 },
+  { name: "street_sitio", section: "Personal information", label: "Street / Sitio", type: "text", options: [], required: false, enabled: true, sort_order: 28 },
+  { name: "contact_number", section: "Personal information", label: "Contact number", type: "text", options: [], required: false, enabled: true, sort_order: 29 },
 
-  { name: "mother_name", section: "Family", label: "Mother's name", type: "text", options: [], required: false, enabled: false, sort_order: 40 },
-  { name: "father_name", section: "Family", label: "Father's name", type: "text", options: [], required: false, enabled: false, sort_order: 41 },
   { name: "family_members", section: "Family members", label: "Family members", type: "repeater", options: [], required: false, enabled: true, sort_order: 50 },
-
-  { name: "household_number", section: "Household", label: "Household number", type: "text", options: [], required: false, enabled: false, sort_order: 60 },
-  { name: "household_members", section: "Household", label: "Household members (count)", type: "number", options: [], required: false, enabled: false, sort_order: 61 },
-  { name: "household_head", section: "Household", label: "Household head", type: "text", options: [], required: false, enabled: false, sort_order: 62 },
-
-  { name: "is_pwd", section: "Flags & consent", label: "PWD", type: "flag", options: [], required: false, enabled: true, sort_order: 70 },
-  { name: "is_senior", section: "Flags & consent", label: "Senior citizen", type: "flag", options: [], required: false, enabled: true, sort_order: 71 },
-  { name: "is_4ps", section: "Flags & consent", label: "4Ps beneficiary", type: "flag", options: [], required: false, enabled: true, sort_order: 72 },
-  { name: "is_indigent", section: "Flags & consent", label: "Indigent", type: "flag", options: [], required: false, enabled: true, sort_order: 73 },
-  { name: "consent_given", section: "Flags & consent", label: "Consent given", type: "flag", options: [], required: false, enabled: true, sort_order: 74 },
 
   { name: "notes", section: "Notes", label: "Notes / remarks", type: "textarea", options: [], required: false, enabled: true, sort_order: 80 },
   { name: "recorded_by", section: "Notes", label: "Recorded by", type: "text", options: [], required: false, enabled: true, sort_order: 81 },
