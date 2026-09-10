@@ -23,14 +23,14 @@ INSERT INTO app_users (role_key, role, code_hash) VALUES
 ON CONFLICT (role_key) DO NOTHING;
 
 -- Login: checks the entered PIN against the stored hash.
--- Returns the role name (Admin/Moderator) or NULL.
+-- Returns the role_key ('admin' | 'moderator') or NULL.
 CREATE OR REPLACE FUNCTION app_login(pin TEXT)
 RETURNS TEXT
 LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
-    SELECT role FROM app_users
+    SELECT role_key FROM app_users
     WHERE code_hash = encode(digest(pin, 'sha256'), 'hex')
     LIMIT 1;
 $$;
@@ -62,7 +62,7 @@ BEGIN
     UPDATE app_users
        SET code_hash = encode(digest(new_pin, 'sha256'), 'hex')
      WHERE role_key = target_key
-     RETURNING role INTO updated_role;
+     RETURNING role_key INTO updated_role;
 
     IF updated_role IS NULL THEN
         RETURN 'not_found';
