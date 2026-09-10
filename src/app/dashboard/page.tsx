@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Save, ShieldCheck, SlidersHorizontal } from "lucide-react";
-import type { FormFieldConfig } from "@/lib/types";
+import { Save, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
+import type { FormFieldConfig, PageKey, Role } from "@/lib/types";
 import { getFormFields, updateFormFields } from "@/lib/residents";
 import { DEFAULT_FORM_FIELDS, groupBySection, isLocked, parseOptions } from "@/lib/formConfig";
+import { ALL_PAGES, getRolePages, setRolePages } from "@/lib/permissions";
 import { useApp } from "@/components/AppProvider";
 import RoleGuard from "@/components/RoleGuard";
 import Section from "@/components/ui/Section";
@@ -277,6 +278,94 @@ function FieldsSection() {
   );
 }
 
+function PageAccessSection() {
+  const { showToast } = useApp();
+  const [pages, setPages] = useState<PageKey[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const role: Role = "moderator";
+
+  useEffect(() => {
+    let alive = true;
+    getRolePages(role)
+      .then((p) => alive && setPages(p))
+      .catch(() => {})
+      .finally(() => alive && setLoaded(true));
+    return () => {
+      alive = false;
+    };
+  }, [role]);
+
+  const toggle = (page: PageKey) =>
+    setPages((prev) => (prev.includes(page) ? prev.filter((p) => p !== page) : [...prev, page]));
+
+  const label = (page: PageKey) =>
+    page === "dashboard" ? "Dashboard" : page === "records" ? "Records" : "Stats";
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await setRolePages(role, pages);
+      showToast("Moderator page access saved");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Could not save page access", true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Section title="User page access">
+      <p className="mb-4 text-sm text-slate-light">
+        Choose which pages each user can open. All users can fully use every function inside the
+        pages they are granted. Admin always has access to everything.
+      </p>
+
+      {!loaded ? (
+        <p className="text-sm text-slate-light">Loading page access...</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="rounded-md border border-line bg-cream/50 p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-teal-dark">
+              <Users className="h-4 w-4 text-sage" />
+              Moderator
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {ALL_PAGES.map((page) => {
+                const enabled = pages.includes(page);
+                return (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => toggle(page)}
+                    className={`cursor-pointer rounded-md border px-4 py-2 text-sm font-semibold transition ${
+                      enabled
+                        ? "border-teal bg-teal text-cream hover:bg-teal-dark"
+                        : "border-line bg-white text-slate-light hover:border-teal"
+                    }`}
+                  >
+                    {label(page)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <button
+              onClick={save}
+              disabled={saving}
+              className="flex cursor-pointer items-center gap-2 rounded-md bg-teal px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-teal-dark disabled:opacity-60"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Saving..." : "Save page access"}
+            </button>
+          </div>
+        </div>
+      )}
+    </Section>
+  );
+}
+
 function DashboardApp() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
@@ -286,11 +375,14 @@ function DashboardApp() {
         </div>
         <div>
           <h1 className="font-serif text-[26px] text-teal-dark">Dashboard</h1>
-          <p className="text-sm text-slate-light">Manage access codes and form fields</p>
+          <p className="text-sm text-slate-light">
+            Manage access codes, page access, vicariates, and form fields
+          </p>
         </div>
       </div>
 
       <CodesSection />
+      <PageAccessSection />
       <VicariateManager />
       <FieldsSection />
     </div>

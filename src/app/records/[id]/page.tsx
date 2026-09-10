@@ -1,6 +1,13 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import type { Resident, ResidentForm } from "@/lib/types";
 import { getResident } from "@/lib/residents";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import RecordForm from "@/components/RecordForm";
+import PageGuard from "@/components/PageGuard";
+import SupabaseSetup from "@/components/SupabaseSetup";
 
 function toForm(r: Resident): ResidentForm {
   return {
@@ -29,11 +36,36 @@ function toForm(r: Resident): ResidentForm {
   };
 }
 
-export default async function ResidentDetailPage(props: PageProps<"/records/[id]">) {
-  const { id } = await props.params;
-  const resident = await getResident(Number(id));
+function ResidentDetail() {
+  const params = useParams<{ id: string }>();
+  const [resident, setResident] = useState<Resident | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  if (!resident) {
+  useEffect(() => {
+    let alive = true;
+    getResident(Number(params.id))
+      .then((r) => {
+        if (!alive) return;
+        if (r) setResident(r);
+        else setError(new Error("not_found"));
+      })
+      .catch((e: Error) => alive && setError(e))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
+        <div className="px-5 py-20 text-center text-slate-light">Loading record...</div>
+      </div>
+    );
+  }
+
+  if (error || !resident) {
     return (
       <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
         <div className="rounded-md border border-line bg-white px-8 py-16 text-center text-slate-light">
@@ -50,5 +82,14 @@ export default async function ResidentDetailPage(props: PageProps<"/records/[id]
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
       <RecordForm id={resident.id} initial={toForm(resident)} isNew={false} />
     </div>
+  );
+}
+
+export default function ResidentDetailPage() {
+  if (!isSupabaseConfigured) return <SupabaseSetup />;
+  return (
+    <PageGuard page="records">
+      <ResidentDetail />
+    </PageGuard>
   );
 }

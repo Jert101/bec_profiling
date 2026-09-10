@@ -16,13 +16,12 @@ import type { Resident, Stats, Vicariate } from "@/lib/types";
 import ResidentGrid from "@/components/records/ResidentGrid";
 import EmptyState from "@/components/records/EmptyState";
 import SupabaseSetup from "@/components/SupabaseSetup";
-import { useApp } from "@/components/AppProvider";
+import PageGuard from "@/components/PageGuard";
 
 const ALL = "__all__";
 const UNASSIGNED = "__unassigned__";
 
 function RecordsApp() {
-  const { session } = useApp();
   const [vicariates, setVicariates] = useState<Vicariate[]>([]);
   const [residents, setResidents] = useState<Resident[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -150,14 +149,12 @@ function RecordsApp() {
           </div>
         )}
 
-        {session?.role === "admin" && (
-          <Link
-            href="/records/new"
-            className="whitespace-nowrap rounded-md bg-teal px-5 py-3 text-sm font-semibold text-cream transition hover:bg-teal-dark"
-          >
-            + New Record
-          </Link>
-        )}
+        <Link
+          href="/records/new"
+          className="whitespace-nowrap rounded-md bg-teal px-5 py-3 text-sm font-semibold text-cream transition hover:bg-teal-dark"
+        >
+          + New Record
+        </Link>
       </div>
 
       {error ? (
@@ -301,5 +298,9 @@ function RecordsApp() {
 
 export default function RecordsPage() {
   if (!isSupabaseConfigured) return <SupabaseSetup />;
-  return <RecordsApp />;
+  return (
+    <PageGuard page="records">
+      <RecordsApp />
+    </PageGuard>
+  );
 }

@@ -6,21 +6,25 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { getTotalCount } from "@/lib/residents";
 import { useApp } from "@/components/AppProvider";
+import type { PageKey } from "@/lib/types";
 
-const COMMON_TABS = [
-  { view: "records", label: "Records", href: "/records" },
-  { view: "stats", label: "Stats", href: "/stats" },
-];
+const TAB_DEFS: Record<PageKey, { label: string; hrefFor: (isAdmin: boolean) => string }> = {
+  dashboard: { label: "Dashboard", hrefFor: (isAdmin) => (isAdmin ? "/dashboard" : "/home") },
+  records: { label: "Records", hrefFor: () => "/records" },
+  stats: { label: "Stats", hrefFor: () => "/stats" },
+};
 
 export default function LedgerSidebar() {
   const pathname = usePathname();
-  const { session, logout } = useApp();
+  const { session, logout, pages, pagesReady } = useApp();
   const [total, setTotal] = useState<number | null>(null);
 
   const isAdmin = session?.role === "admin";
-  const tabs = isAdmin
-    ? [{ view: "dashboard", label: "Dashboard", href: "/dashboard" }, ...COMMON_TABS]
-    : COMMON_TABS;
+  const tabs = pages.map((view) => ({
+    view,
+    label: TAB_DEFS[view].label,
+    href: TAB_DEFS[view].hrefFor(isAdmin),
+  }));
 
   useEffect(() => {
     let alive = true;
@@ -32,7 +36,7 @@ export default function LedgerSidebar() {
     };
   }, [pathname]);
 
-  const active = pathname.startsWith("/dashboard")
+  const active = pathname.startsWith("/dashboard") || pathname.startsWith("/home")
     ? "dashboard"
     : pathname.startsWith("/stats")
       ? "stats"
@@ -48,6 +52,10 @@ export default function LedgerSidebar() {
         className="mb-6 h-10 w-10 rounded-full object-cover"
         priority
       />
+
+      {tabs.length > 0 && !pagesReady && (
+        <span className="mt-2 text-[11px] text-cream/70">Loading…</span>
+      )}
 
       {tabs.map((tab) => (
         <Link

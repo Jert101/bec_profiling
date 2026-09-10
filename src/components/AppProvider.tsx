@@ -1,9 +1,10 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { Session } from "@/lib/types";
+import type { PageKey, Session } from "@/lib/types";
 import { getSessionSnapshot, subscribeSession, loginWithPin, logoutSession, changeUserCode } from "@/lib/auth";
 import type { ChangeCodeResult } from "@/lib/auth";
+import { ALL_PAGES, getRolePages } from "@/lib/permissions";
 
 interface ToastState {
   message: string;
@@ -18,6 +19,8 @@ interface ConfirmState {
 interface AppContextValue {
   session: Session | null;
   ready: boolean;
+  pages: PageKey[];
+  pagesReady: boolean;
   login: (pin: string) => Promise<Session | null>;
   logout: () => void;
   changeCode: (
@@ -32,6 +35,8 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue>({
   session: null,
   ready: false,
+  pages: [],
+  pagesReady: false,
   login: async () => null,
   logout: () => {},
   changeCode: async () => ({ result: "error", message: "" }),
@@ -47,6 +52,8 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   const [ready, setReady] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const [loadedPages, setLoadedPages] = useState<PageKey[]>([]);
+  const [pagesReady, setPagesReady] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const session = useSyncExternalStore(subscribeSession, getSessionSnapshot, () => null);
@@ -55,6 +62,20 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     const t = setTimeout(() => setReady(true), 0);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    let alive = true;
+    getRolePages(session.role)
+      .then((p) => alive && setLoadedPages(p))
+      .catch(() => alive && setLoadedPages([]))
+      .finally(() => alive && setPagesReady(true));
+    return () => {
+      alive = false;
+    };
+  }, [session]);
+
+  const pages = session?.role === "admin" ? ALL_PAGES : loadedPages;
 
   const showToast = useCallback((message: string, isError = false) => {
     setToast({ message, isError });
@@ -91,7 +112,9 @@ export default function AppProvider({ children }: { children: React.ReactNode })
   );
 
   return (
-    <AppContext.Provider value={{ session, ready, login, logout, changeCode, showToast, confirmDelete }}>
+    <AppContext.Provider
+      value={{ session, ready, pages, pagesReady, login, logout, changeCode, showToast, confirmDelete }}
+    >
       {children}
 
       {toast && (

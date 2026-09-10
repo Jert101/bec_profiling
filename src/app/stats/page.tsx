@@ -5,6 +5,7 @@ import { getStats } from "@/lib/residents";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Stats } from "@/lib/types";
 import SupabaseSetup from "@/components/SupabaseSetup";
+import PageGuard from "@/components/PageGuard";
 
 function StatsApp() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -66,5 +67,9 @@ function StatsApp() {
 
 export default function StatsPage() {
   if (!isSupabaseConfigured) return <SupabaseSetup />;
-  return <StatsApp />;
+  return (
+    <PageGuard page="stats">
+      <StatsApp />
+    </PageGuard>
+  );
 }

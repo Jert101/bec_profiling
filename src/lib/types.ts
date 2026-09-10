@@ -110,6 +110,8 @@ export interface FormFieldConfig {
 
 export type Role = "admin" | "moderator";
 
+export type PageKey = "dashboard" | "records" | "stats";
+
 export interface Session {
   role: Role;
 }

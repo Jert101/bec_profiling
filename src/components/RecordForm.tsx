@@ -38,8 +38,8 @@ export default function RecordForm({
   id?: number;
 }) {
   const router = useRouter();
-  const { session, showToast, confirmDelete } = useApp();
-  const readOnly = session?.role === "moderator";
+  const { showToast, confirmDelete } = useApp();
+  const readOnly = false;
   const [form, setForm] = useState<ResidentForm>(initial);
   const [family, setFamily] = useState<FamilyRow[]>([]);
   const [deletedFamilyIds, setDeletedFamilyIds] = useState<number[]>([]);
