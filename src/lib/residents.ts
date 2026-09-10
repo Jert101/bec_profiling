@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { FamilyMember, FamilyMemberForm, Resident, ResidentForm, Stats } from "./types";
+import type { FamilyMember, FamilyMemberForm, FormFieldConfig, Resident, ResidentForm, Stats } from "./types";
 
 const SEARCH_COLUMNS = [
   "first_name",
@@ -124,14 +124,42 @@ function toDb(form: ResidentForm) {
   };
 }
 
-export function validateForm(form: ResidentForm): string | null {
-  if (!form.first_name.trim()) return "First Name is required.";
-  if (!form.last_name.trim()) return "Last Name is required.";
+export function validateForm(form: ResidentForm, fields: FormFieldConfig[]): string | null {
+  for (const f of fields) {
+    if (!f.enabled || !f.required) continue;
+    if (f.type === "flag") continue;
+    const value = form[f.name as keyof ResidentForm];
+    if (Array.isArray(value)) {
+      if (value.length === 0) return `${f.label} is required.`;
+    } else {
+      const v = typeof value === "string" ? value.trim() : value;
+      if (!v && v !== false) return `${f.label} is required.`;
+    }
+  }
   const members = form.household_members;
-  if (members !== "" && members !== null && members !== undefined && Number.isNaN(Number(members))) {
+  if (
+    members !== "" &&
+    members !== null &&
+    members !== undefined &&
+    Number.isNaN(Number(members))
+  ) {
     return "Household Members must be a number.";
   }
   return null;
+}
+
+export async function getFormFields(): Promise<FormFieldConfig[]> {
+  const { data, error } = await supabase
+    .from("form_fields")
+    .select("*")
+    .order("sort_order");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as FormFieldConfig[];
+}
+
+export async function updateFormFields(rows: FormFieldConfig[]): Promise<void> {
+  const { error } = await supabase.from("form_fields").upsert(rows);
+  if (error) throw new Error(error.message);
 }
 
 export async function createResident(form: ResidentForm): Promise<Resident> {

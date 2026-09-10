@@ -4,15 +4,22 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getTotalCount } from "@/lib/residents";
+import { useApp } from "@/components/AppProvider";
 
-const TABS = [
+const COMMON_TABS = [
   { view: "records", label: "Records", href: "/records" },
   { view: "stats", label: "Stats", href: "/stats" },
 ];
 
 export default function LedgerSidebar() {
   const pathname = usePathname();
+  const { session, logout } = useApp();
   const [total, setTotal] = useState<number | null>(null);
+
+  const isAdmin = session?.role === "admin";
+  const tabs = isAdmin
+    ? [{ view: "dashboard", label: "Dashboard", href: "/dashboard" }, ...COMMON_TABS]
+    : COMMON_TABS;
 
   useEffect(() => {
     let alive = true;
@@ -24,8 +31,11 @@ export default function LedgerSidebar() {
     };
   }, [pathname]);
 
-  const active =
-    pathname.startsWith("/records") ? "records" : pathname.startsWith("/stats") ? "stats" : "records";
+  const active = pathname.startsWith("/dashboard")
+    ? "dashboard"
+    : pathname.startsWith("/stats")
+      ? "stats"
+      : "records";
 
   return (
     <nav className="flex flex-col items-center gap-1 bg-teal pt-5 text-cream">
@@ -33,7 +43,7 @@ export default function LedgerSidebar() {
         KZ
       </div>
 
-      {TABS.map((tab) => (
+      {tabs.map((tab) => (
         <Link
           key={tab.view}
           href={tab.href}
@@ -47,11 +57,22 @@ export default function LedgerSidebar() {
         </Link>
       ))}
 
-      <div className="mt-auto mb-5 text-center text-[11px] leading-relaxed">
-        <span className="block font-serif text-[22px] font-bold text-gold">
-          {total ?? "–"}
+      <div className="mt-auto flex flex-col items-center gap-2 pb-4">
+        <span className="text-center text-[11px] leading-relaxed">
+          <span className="block font-serif text-[22px] font-bold text-gold">
+            {total ?? "–"}
+          </span>
+          total
         </span>
-        total
+        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+          {isAdmin ? "Admin" : "Moderator"}
+        </span>
+        <button
+          onClick={logout}
+          className="cursor-pointer rounded-md bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-cream transition hover:bg-white/20"
+        >
+          Sign out
+        </button>
       </div>
     </nav>
   );

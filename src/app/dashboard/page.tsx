@@ -1,0 +1,295 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Save, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import type { FormFieldConfig } from "@/lib/types";
+import { getFormFields, updateFormFields } from "@/lib/residents";
+import { DEFAULT_FORM_FIELDS, groupBySection, isLocked, parseOptions } from "@/lib/formConfig";
+import { useApp } from "@/components/AppProvider";
+import RoleGuard from "@/components/RoleGuard";
+import Section from "@/components/ui/Section";
+
+function CodesSection() {
+  const { changeCode, showToast } = useApp();
+  const [adminNew, setAdminNew] = useState("");
+  const [modNew, setModNew] = useState("");
+  const [adminAuth, setAdminAuth] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const reset = () => {
+    setAdminNew("");
+    setModNew("");
+    setAdminAuth("");
+  };
+
+  const saveCode = async (target: "admin" | "moderator", newPin: string) => {
+    const label = target === "admin" ? "Admin" : "Moderator";
+    if (!newPin.trim()) {
+      showToast(`Enter a new ${label} access code.`, true);
+      return;
+    }
+    if (!adminAuth.trim()) {
+      showToast("Enter your admin access code to authorize.", true);
+      return;
+    }
+    setBusy(target);
+    const { result, message } = await changeCode(target, newPin.trim(), adminAuth.trim());
+    setBusy(null);
+    if (result === "ok") {
+      showToast(message);
+      reset();
+    } else {
+      showToast(message, true);
+    }
+  };
+
+  const fieldClass =
+    "w-full rounded-md border border-line bg-white px-3 py-2 font-mono text-sm tracking-widest text-slate outline-none transition focus:border-sage focus:ring-3 focus:ring-sage-light";
+
+  return (
+    <Section title="User access codes">
+      <p className="mb-4 text-sm text-slate-light">
+        Set or reset the access codes for each user. Seed defaults: Admin{" "}
+        <span className="font-mono">0000</span> · Moderator{" "}
+        <span className="font-mono">1111</span>. Codes are stored hashed.
+      </p>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {(
+          [
+            { key: "admin" as const, label: "Admin", newVal: adminNew, setNew: setAdminNew },
+            { key: "moderator" as const, label: "Moderator", newVal: modNew, setNew: setModNew },
+          ]
+        ).map(({ key, label, newVal, setNew }) => (
+          <div key={key} className="rounded-md border border-line bg-cream/50 p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-teal-dark">
+              <ShieldCheck className="h-4 w-4 text-sage" />
+              {label}
+            </div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-light">
+              New access code
+            </label>
+            <input
+              type="password"
+              inputMode="numeric"
+              value={newVal}
+              onChange={(e) => setNew(e.target.value)}
+              placeholder="Enter new code"
+              className={fieldClass}
+            />
+            <button
+              onClick={() => saveCode(key, newVal)}
+              disabled={busy !== null}
+              className="mt-3 w-full cursor-pointer rounded-md bg-teal px-4 py-2 text-sm font-semibold text-cream transition hover:bg-teal-dark disabled:opacity-60"
+            >
+              {busy === key ? "Saving..." : `Update ${label} code`}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4">
+        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-light">
+          Your admin access code (to authorize changes)
+        </label>
+        <input
+          type="password"
+          inputMode="numeric"
+          value={adminAuth}
+          onChange={(e) => setAdminAuth(e.target.value)}
+          placeholder="Admin code"
+          className={`${fieldClass} max-w-xs`}
+        />
+      </div>
+    </Section>
+  );
+}
+
+function FieldsSection() {
+  const { showToast } = useApp();
+  const [draft, setDraft] = useState<FormFieldConfig[]>(() =>
+    DEFAULT_FORM_FIELDS.map((f) => ({ ...f, options: [...f.options] })),
+  );
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    getFormFields()
+      .then((data) => {
+        if (!alive || !data || data.length === 0) return;
+        setDraft(data.map((f) => ({ ...f, options: [...f.options] })));
+      })
+      .catch(() => {})
+      .finally(() => alive && setLoaded(true));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const groups = useMemo(() => groupBySection(draft), [draft]);
+
+  const patch = (name: string, patch: Partial<FormFieldConfig>) =>
+    setDraft((prev) => prev.map((f) => (f.name === name ? { ...f, ...patch } : f)));
+
+  const move = (name: string, dir: -1 | 1) => {
+    setDraft((prev) => {
+      const next = [...prev].sort((a, b) => a.sort_order - b.sort_order);
+      const i = next.findIndex((f) => f.name === name);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= next.length || next[i].section !== next[j].section) return prev;
+      const a = { ...next[i], sort_order: next[j].sort_order };
+      const b = { ...next[j], sort_order: next[i].sort_order };
+      next[i] = b;
+      next[j] = a;
+      return next;
+    });
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateFormFields(
+        draft.map((f) => ({ ...f, options: f.options.filter((o) => o.trim() !== "") })),
+      );
+      showToast("Form fields saved");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Could not save form fields", true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputClass =
+    "w-full rounded-md border border-line bg-white px-2.5 py-1.5 font-sans text-[13px] text-slate outline-none transition focus:border-sage focus:ring-2 focus:ring-sage-light disabled:opacity-60";
+
+  return (
+    <Section title="Form fields (dynamic form)">
+      <p className="mb-4 text-sm text-slate-light">
+        Show or hide fields, rename labels, edit dropdown options, and set the required
+        state. First and last name are always required.
+      </p>
+
+      {!loaded ? (
+        <p className="text-sm text-slate-light">Loading form configuration...</p>
+      ) : (
+        <div className="flex flex-col gap-6">
+          {groups.map(({ section, fields }) => (
+            <div key={section}>
+              <h4 className="mb-2 font-serif text-sm font-bold text-teal-dark">{section}</h4>
+              <div className="flex flex-col gap-2">
+                {fields.map((f) => {
+                  const locked = isLocked(f.name);
+                  return (
+                    <div
+                      key={f.name}
+                      className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-cream/40 p-2.5"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => move(f.name, -1)}
+                        disabled={locked}
+                        className="h-6 w-6 cursor-pointer rounded border border-line bg-white text-xs text-slate-light transition hover:border-teal hover:text-teal disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => move(f.name, 1)}
+                        disabled={locked}
+                        className="h-6 w-6 cursor-pointer rounded border border-line bg-white text-xs text-slate-light transition hover:border-teal hover:text-teal disabled:cursor-not-allowed disabled:opacity-40"
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+
+                      <label className="flex cursor-pointer items-center gap-1.5 text-[13px] font-semibold text-slate">
+                        <input
+                          type="checkbox"
+                          checked={f.enabled}
+                          disabled={locked}
+                          onChange={(e) => patch(f.name, { enabled: e.target.checked })}
+                        />
+                        Shown
+                      </label>
+
+                      <input
+                        type="text"
+                        value={f.label}
+                        disabled={locked}
+                        onChange={(e) => patch(f.name, { label: e.target.value })}
+                        className={`${inputClass} w-44`}
+                      />
+
+                      <label className="flex cursor-pointer items-center gap-1.5 text-[13px] font-semibold text-slate">
+                        <input
+                          type="checkbox"
+                          checked={f.required}
+                          disabled={locked}
+                          onChange={(e) => patch(f.name, { required: e.target.checked })}
+                        />
+                        Required
+                      </label>
+
+                      {(f.type === "select" || f.type === "multiselect") && (
+                        <input
+                          type="text"
+                          value={f.options.join(", ")}
+                          onChange={(e) =>
+                            patch(f.name, { options: parseOptions(e.target.value) })
+                          }
+                          className={`${inputClass} min-w-[220px] flex-1`}
+                          placeholder="Options, comma separated"
+                          title="Dropdown / chip options (comma separated)"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-6">
+        <button
+          onClick={save}
+          disabled={saving || !loaded}
+          className="flex cursor-pointer items-center gap-2 rounded-md bg-teal px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-teal-dark disabled:opacity-60"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? "Saving..." : "Save form fields"}
+        </button>
+      </div>
+    </Section>
+  );
+}
+
+function DashboardApp() {
+  return (
+    <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sage-light text-teal-dark">
+          <SlidersHorizontal className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="font-serif text-[26px] text-teal-dark">Dashboard</h1>
+          <p className="text-sm text-slate-light">Manage access codes and form fields</p>
+        </div>
+      </div>
+
+      <CodesSection />
+      <FieldsSection />
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <RoleGuard role="admin">
+      <DashboardApp />
+    </RoleGuard>
+  );
+}

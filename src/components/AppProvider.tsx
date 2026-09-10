@@ -1,6 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import type { Session } from "@/lib/types";
+import { getSessionSnapshot, subscribeSession, loginWithPin, logoutSession, changeUserCode } from "@/lib/auth";
+import type { ChangeCodeResult } from "@/lib/auth";
 
 interface ToastState {
   message: string;
@@ -13,11 +16,25 @@ interface ConfirmState {
 }
 
 interface AppContextValue {
+  session: Session | null;
+  ready: boolean;
+  login: (pin: string) => Promise<Session | null>;
+  logout: () => void;
+  changeCode: (
+    targetKey: "admin" | "moderator",
+    newPin: string,
+    adminPin: string,
+  ) => Promise<{ result: ChangeCodeResult; message: string }>;
   showToast: (message: string, isError?: boolean) => void;
   confirmDelete: (name?: string) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextValue>({
+  session: null,
+  ready: false,
+  login: async () => null,
+  logout: () => {},
+  changeCode: async () => ({ result: "error", message: "" }),
   showToast: () => {},
   confirmDelete: async () => false,
 });
@@ -27,9 +44,17 @@ export function useApp() {
 }
 
 export default function AppProvider({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const session = useSyncExternalStore(subscribeSession, getSessionSnapshot, () => null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   const showToast = useCallback((message: string, isError = false) => {
     setToast({ message, isError });
@@ -48,8 +73,23 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     });
   }, []);
 
+  const login = useCallback(async (pin: string) => {
+    return loginWithPin(pin);
+  }, []);
+
+  const logout = useCallback(() => {
+    logoutSession();
+  }, []);
+
+  const changeCode = useCallback(
+    async (targetKey: "admin" | "moderator", newPin: string, adminPin: string) => {
+      return changeUserCode(targetKey, newPin, adminPin);
+    },
+    [],
+  );
+
   return (
-    <AppContext.Provider value={{ showToast, confirmDelete }}>
+    <AppContext.Provider value={{ session, ready, login, logout, changeCode, showToast, confirmDelete }}>
       {children}
 
       {toast && (

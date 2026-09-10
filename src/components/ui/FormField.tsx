@@ -2,10 +2,19 @@ interface BaseProps {
   label: string;
   name: string;
   required?: boolean;
+  disabled?: boolean;
 }
 
 interface TextProps extends BaseProps {
   type?: "text" | "date" | "number" | "tel";
+  value: string;
+  onChange: (value: string) => void;
+  options?: undefined;
+  placeholder?: string;
+}
+
+interface TextareaProps extends BaseProps {
+  type: "textarea";
   value: string;
   onChange: (value: string) => void;
   options?: undefined;
@@ -20,16 +29,17 @@ interface SelectProps extends BaseProps {
   placeholder?: string;
 }
 
-type FormFieldProps = TextProps | SelectProps;
+type FormFieldProps = TextProps | TextareaProps | SelectProps;
 
 export default function FormField(props: FormFieldProps) {
-  const { label, name, value, onChange, required } = props;
+  const { label, name, value, onChange, required, disabled } = props;
   const placeholder = props.placeholder ?? "Select...";
 
   const isSelect = props.type === "select";
+  const isTextarea = props.type === "textarea";
 
   const inputClass =
-    "w-full rounded-md border border-line bg-white px-3 py-2.5 font-sans text-sm text-slate outline-none transition focus:border-sage focus:ring-3 focus:ring-sage-light";
+    "w-full rounded-md border border-line bg-white px-3 py-2.5 font-sans text-sm text-slate outline-none transition focus:border-sage focus:ring-3 focus:ring-sage-light disabled:cursor-not-allowed disabled:bg-cream disabled:text-slate-light";
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -41,6 +51,7 @@ export default function FormField(props: FormFieldProps) {
         <select
           name={name}
           value={value}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           className={inputClass}
         >
@@ -51,10 +62,19 @@ export default function FormField(props: FormFieldProps) {
             </option>
           ))}
         </select>
+      ) : isTextarea ? (
+        <textarea
+          name={name}
+          disabled={disabled}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`min-h-[70px] resize-y ${inputClass}`}
+        />
       ) : (
         <input
           name={name}
           type={props.type ?? "text"}
+          disabled={disabled}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={inputClass}

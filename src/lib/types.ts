@@ -99,6 +99,23 @@ export interface FamilyMemberForm {
   occupation: string;
 }
 
+export interface FormFieldConfig {
+  name: string;
+  section: string;
+  label: string;
+  type: "text" | "date" | "number" | "select" | "multiselect" | "flag" | "textarea" | "repeater";
+  options: string[];
+  required: boolean;
+  enabled: boolean;
+  sort_order: number;
+}
+
+export type Role = "admin" | "moderator";
+
+export interface Session {
+  role: Role;
+}
+
 export function fullName(r: Pick<Resident, "first_name" | "middle_name" | "last_name" | "suffix">): string {
   return [r.first_name, r.middle_name, r.last_name, r.suffix].filter(Boolean).join(" ");
 }

@@ -114,9 +114,11 @@ function Row({
 export default function FamilySection({
   members,
   onChange,
+  readOnly,
 }: {
   members: FamilyRow[];
   onChange: (members: FamilyRow[]) => void;
+  readOnly?: boolean;
 }) {
   const updateRow = (index: number, patch: Partial<FamilyMemberForm>) => {
     const next = members.map((m, i) =>
@@ -132,6 +134,35 @@ export default function FamilySection({
   const addRow = () => {
     onChange([...members, { data: emptyFamilyMember() }]);
   };
+
+  if (readOnly) {
+    return (
+      <Section title="Family members">
+        {members.length === 0 ? (
+          <p className="text-sm text-slate-light">No family members recorded.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {members.map((m, i) => (
+              <div
+                key={m.id ?? `new-${i}`}
+                className="rounded-md border border-line bg-cream/50 p-4"
+              >
+                <div className="mb-1 font-serif text-[15px] font-semibold text-teal-dark">
+                  {m.data.full_name || `Family member ${i + 1}`}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[13px] text-slate-light">
+                  {m.data.relationship && <span>{m.data.relationship}</span>}
+                  {m.data.sex && <span>{m.data.sex}</span>}
+                  {m.data.age && <span>{m.data.age} yrs</span>}
+                  {m.data.occupation && <span>{m.data.occupation}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+    );
+  }
 
   return (
     <Section title="Family members">
