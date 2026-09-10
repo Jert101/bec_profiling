@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import type {
   FamilyMember,
   FamilyMemberForm,
+  FamilyStats,
   FormFieldConfig,
   Resident,
   ResidentForm,
@@ -88,6 +89,22 @@ export async function getStats(): Promise<Stats> {
     catholicPct: total ? Math.round((catholic / total) * 1000) / 10 : 0,
     religionBreakdown: breakdown,
   };
+}
+
+export async function getFamilyStats(): Promise<FamilyStats> {
+  const { data, error, count } = await supabase
+    .from("family_members")
+    .select("category", { count: "exact" });
+  if (error) throw new Error(error.message);
+  const map = new Map<string, number>();
+  for (const row of data ?? []) {
+    const cat = row.category || "(Not specified)";
+    map.set(cat, (map.get(cat) ?? 0) + 1);
+  }
+  const byCategory = [...map.entries()]
+    .map(([category, c]) => ({ category, count: c }))
+    .sort((a, b) => b.count - a.count);
+  return { total: count ?? 0, byCategory };
 }
 
 function toDb(form: ResidentForm) {

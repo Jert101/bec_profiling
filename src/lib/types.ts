@@ -62,6 +62,11 @@ export interface Stats {
   religionBreakdown: { religion: string; count: number; pct: number }[];
 }
 
+export interface FamilyStats {
+  total: number;
+  byCategory: { category: string; count: number }[];
+}
+
 export interface FamilyMember {
   id: number;
   resident_id: number;
