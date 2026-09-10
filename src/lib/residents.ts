@@ -1,5 +1,13 @@
 import { supabase } from "./supabase";
-import type { FamilyMember, FamilyMemberForm, FormFieldConfig, Resident, ResidentForm, Stats } from "./types";
+import type {
+  FamilyMember,
+  FamilyMemberForm,
+  FormFieldConfig,
+  Resident,
+  ResidentForm,
+  Stats,
+  Vicariate,
+} from "./types";
 
 const SEARCH_COLUMNS = [
   "first_name",
@@ -10,6 +18,8 @@ const SEARCH_COLUMNS = [
   "occupation",
   "contact_number",
   "religion",
+  "vicariate",
+  "parish",
   "bec_cell_name",
 ] as const;
 
@@ -96,6 +106,7 @@ function toDb(form: ResidentForm) {
     date_of_birth: emptyToNull("date_of_birth") || null,
     civil_status: emptyToNull("civil_status"),
     religion: emptyToNull("religion"),
+    vicariate: emptyToNull("vicariate"),
     parish: emptyToNull("parish"),
     matrimony: emptyToNull("matrimony"),
     matrimony_date: emptyToNull("matrimony_date") || null,
@@ -159,6 +170,60 @@ export async function getFormFields(): Promise<FormFieldConfig[]> {
 
 export async function updateFormFields(rows: FormFieldConfig[]): Promise<void> {
   const { error } = await supabase.from("form_fields").upsert(rows);
+  if (error) throw new Error(error.message);
+}
+
+export async function getVicariates(): Promise<Vicariate[]> {
+  const [v, p] = await Promise.all([
+    supabase.from("vicariates").select("id, name, sort_order").order("sort_order").order("name"),
+    supabase.from("parishes").select("id, vicariate_id, name, sort_order").order("sort_order").order("name"),
+  ]);
+  if (v.error) throw new Error(v.error.message);
+  if (p.error) throw new Error(p.error.message);
+  const map = new Map<number, Vicariate>();
+  for (const row of v.data ?? []) map.set(row.id, { ...row, parishes: [] });
+  for (const pRow of p.data ?? []) {
+    const vic = map.get(pRow.vicariate_id);
+    if (vic) vic.parishes.push({ id: pRow.id, name: pRow.name });
+  }
+  return [...map.values()];
+}
+
+export async function addVicariate(name: string): Promise<void> {
+  const { error } = await supabase.from("vicariates").insert({ name: name.trim() });
+  if (error) throw new Error(error.message);
+}
+
+export async function renameVicariate(id: number, name: string): Promise<void> {
+  const { error } = await supabase
+    .from("vicariates")
+    .update({ name: name.trim() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteVicariate(id: number): Promise<void> {
+  const { error } = await supabase.from("vicariates").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function addParish(vicariateId: number, name: string): Promise<void> {
+  const { error } = await supabase
+    .from("parishes")
+    .insert({ vicariate_id: vicariateId, name: name.trim() });
+  if (error) throw new Error(error.message);
+}
+
+export async function renameParish(id: number, name: string): Promise<void> {
+  const { error } = await supabase
+    .from("parishes")
+    .update({ name: name.trim() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteParish(id: number): Promise<void> {
+  const { error } = await supabase.from("parishes").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }
 

@@ -8,6 +8,7 @@ export interface Resident {
   date_of_birth: string | null;
   civil_status: string | null;
   religion: string | null;
+  vicariate: string | null;
   parish: string | null;
   matrimony: string | null;
   matrimony_date: string | null;
@@ -43,6 +44,7 @@ export type ResidentForm = {
   date_of_birth: string;
   civil_status: string;
   religion: string;
+  vicariate: string;
   parish: string;
   matrimony: string;
   matrimony_date: string;
@@ -99,6 +101,18 @@ export interface FamilyMemberForm {
   occupation: string;
 }
 
+export interface VicariateParish {
+  id: number;
+  name: string;
+}
+
+export interface Vicariate {
+  id: number;
+  name: string;
+  sort_order: number;
+  parishes: VicariateParish[];
+}
+
 export interface FormFieldConfig {
   name: string;
   section: string;
@@ -145,6 +159,7 @@ export function emptyForm(): ResidentForm {
     date_of_birth: "",
     civil_status: "",
     religion: "",
+    vicariate: "",
     parish: "",
     matrimony: "",
     matrimony_date: "",

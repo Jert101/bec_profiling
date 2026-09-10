@@ -8,6 +8,7 @@ import { DEFAULT_FORM_FIELDS, groupBySection, isLocked, parseOptions } from "@/l
 import { useApp } from "@/components/AppProvider";
 import RoleGuard from "@/components/RoleGuard";
 import Section from "@/components/ui/Section";
+import VicariateManager from "@/components/VicariateManager";
 
 function CodesSection() {
   const { changeCode, showToast } = useApp();
@@ -232,18 +233,25 @@ function FieldsSection() {
                         Required
                       </label>
 
-                      {(f.type === "select" || f.type === "multiselect") && (
-                        <input
-                          type="text"
-                          value={f.options.join(", ")}
-                          onChange={(e) =>
-                            patch(f.name, { options: parseOptions(e.target.value) })
-                          }
-                          className={`${inputClass} min-w-[220px] flex-1`}
-                          placeholder="Options, comma separated"
-                          title="Dropdown / chip options (comma separated)"
-                        />
+                      {(f.type === "select" || f.type === "multiselect") && (f.name === "vicariate" || f.name === "parish") && (
+                        <span className="rounded bg-sage-light px-2 py-1 text-[11px] font-semibold text-teal-dark">
+                          Options managed in Vicariates &amp; Parishes
+                        </span>
                       )}
+                      {(f.type === "select" || f.type === "multiselect") &&
+                        f.name !== "vicariate" &&
+                        f.name !== "parish" && (
+                          <input
+                            type="text"
+                            value={f.options.join(", ")}
+                            onChange={(e) =>
+                              patch(f.name, { options: parseOptions(e.target.value) })
+                            }
+                            className={`${inputClass} min-w-[220px] flex-1`}
+                            placeholder="Options, comma separated"
+                            title="Dropdown / chip options (comma separated)"
+                          />
+                        )}
                     </div>
                   );
                 })}
@@ -281,6 +289,7 @@ function DashboardApp() {
       </div>
 
       <CodesSection />
+      <VicariateManager />
       <FieldsSection />
     </div>
   );

@@ -26,7 +26,7 @@ interface AppContextValue {
     adminPin: string,
   ) => Promise<{ result: ChangeCodeResult; message: string }>;
   showToast: (message: string, isError?: boolean) => void;
-  confirmDelete: (name?: string) => Promise<boolean>;
+  confirmDelete: (name?: string, message?: string) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextValue>({
@@ -62,12 +62,14 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     timerRef.current = setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const confirmDelete = useCallback((name?: string) => {
+  const confirmDelete = useCallback((name?: string, message?: string) => {
     return new Promise<boolean>((resolve) => {
       setConfirm({
-        message: name
-          ? `This action permanently removes the record for ${name}. It cannot be undone.`
-          : "This action permanently removes the record. It cannot be undone.",
+        message:
+          message ??
+          (name
+            ? `This action permanently removes the record for ${name}. It cannot be undone.`
+            : "This action permanently removes the record. It cannot be undone."),
         resolve,
       });
     });

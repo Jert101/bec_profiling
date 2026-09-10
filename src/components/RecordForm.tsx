@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import type { FamilyMember, FormFieldConfig, ResidentForm } from "@/lib/types";
+import type { FamilyMember, FormFieldConfig, ResidentForm, Vicariate } from "@/lib/types";
 import { initials, fullName } from "@/lib/types";
 import {
   createResident,
@@ -12,6 +12,7 @@ import {
   deleteResident,
   validateForm,
   getFormFields,
+  getVicariates,
   getFamilyMembers,
   createFamilyMembers,
   updateFamilyMember,
@@ -46,6 +47,7 @@ export default function RecordForm({
   const [fields, setFields] = useState<FormFieldConfig[]>(() =>
     normalizeFields(DEFAULT_FORM_FIELDS),
   );
+  const [vicariates, setVicariates] = useState<Vicariate[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -56,6 +58,14 @@ export default function RecordForm({
       })
       .catch(() => {
         /* keep defaults */
+      });
+    getVicariates()
+      .then((data) => {
+        if (!alive) return;
+        setVicariates(data);
+      })
+      .catch(() => {
+        /* keep empty */
       });
     return () => {
       alive = false;
@@ -152,6 +162,45 @@ export default function RecordForm({
 
   const renderStandardField = (f: FormFieldConfig) => {
     const value = form[f.name as keyof ResidentForm];
+
+    if (f.name === "vicariate" || f.name === "parish") {
+      let options: string[];
+      if (f.name === "vicariate") {
+        options = vicariates.map((v) => v.name);
+      } else {
+        const selectedVicariate = vicariates.find((v) => v.name === form.vicariate);
+        options = selectedVicariate
+          ? selectedVicariate.parishes.map((p) => p.name)
+          : vicariates.flatMap((v) => v.parishes.map((p) => p.name));
+        const current = (value as string) ?? "";
+        if (current && !options.includes(current)) options = [current, ...options];
+      }
+      return (
+        <div key={f.name}>
+          <FormField
+            type="select"
+            label={f.label}
+            name={f.name}
+            value={(value as string) ?? ""}
+            disabled={readOnly}
+            required={f.required}
+            onChange={(v) => {
+              setValue(f.name as keyof ResidentForm, v);
+              if (f.name === "vicariate") setForm((prev) => ({ ...prev, parish: "" }));
+            }}
+            options={options}
+            placeholder={
+              f.name === "vicariate"
+                ? "Select vicariate"
+                : form.vicariate
+                  ? "Select parish"
+                  : "Select a vicariate first"
+            }
+          />
+        </div>
+      );
+    }
+
     if (f.type === "multiselect") {
       const selected = (value as string[]) ?? [];
       const toggle = (opt: string) =>
