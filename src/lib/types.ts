@@ -90,6 +90,8 @@ export interface FamilyMember {
   sex: string | null;
   age: number | null;
   occupation: string | null;
+  category: string | null;
+  sacraments: string[];
   date_added: string;
 }
 
@@ -99,6 +101,8 @@ export interface FamilyMemberForm {
   sex: string;
   age: string;
   occupation: string;
+  category: string;
+  sacraments: string[];
 }
 
 export interface VicariateParish {
@@ -187,5 +191,13 @@ export function emptyForm(): ResidentForm {
 }
 
 export function emptyFamilyMember(): FamilyMemberForm {
-  return { full_name: "", relationship: "", sex: "", age: "", occupation: "" };
+  return {
+    full_name: "",
+    relationship: "",
+    sex: "",
+    age: "",
+    occupation: "",
+    category: "",
+    sacraments: [],
+  };
 }

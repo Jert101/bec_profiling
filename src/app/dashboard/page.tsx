@@ -241,16 +241,18 @@ function FieldsSection() {
                       {(f.type === "select" || f.type === "multiselect") &&
                         f.name !== "vicariate" &&
                         f.name !== "parish" && (
-                          <input
-                            type="text"
-                            value={f.options.join(", ")}
-                            onChange={(e) =>
-                              patch(f.name, { options: parseOptions(e.target.value) })
-                            }
-                            className={`${inputClass} min-w-[220px] flex-1`}
-                            placeholder="Options, comma separated"
-                            title="Dropdown / chip options (comma separated)"
-                          />
+                          <div className="flex-1">
+                            <textarea
+                              value={f.options.join("\n")}
+                              onChange={(e) =>
+                                patch(f.name, { options: parseOptions(e.target.value) })
+                              }
+                              rows={Math.max(2, Math.min(6, f.options.length + 1))}
+                              className={`${inputClass} w-full min-w-[220px]`}
+                              placeholder={"One option per line —\nadd or remove lines to edit choices"}
+                              title="Dropdown / chip choices — one per line"
+                            />
+                          </div>
                         )}
                     </div>
                   );

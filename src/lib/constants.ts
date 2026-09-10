@@ -1,5 +1,14 @@
 export const SEX_OPTIONS = ["Male", "Female"];
 
+export const FAMILY_CATEGORY_OPTIONS = [
+  "Infant",
+  "PWD",
+  "Senior Citizen",
+  "Worker",
+  "Student",
+  "Pregnant",
+];
+
 export const CIVIL_STATUS_OPTIONS = [
   "Single",
   "Married",

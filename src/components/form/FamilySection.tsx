@@ -3,8 +3,9 @@
 import { Plus, X } from "lucide-react";
 import { emptyFamilyMember } from "@/lib/types";
 import type { FamilyMemberForm } from "@/lib/types";
-import { SEX_OPTIONS } from "@/lib/constants";
+import { SEX_OPTIONS, FAMILY_CATEGORY_OPTIONS, SACRAMENT_OPTIONS } from "@/lib/constants";
 import Section from "@/components/ui/Section";
+import Chip from "@/components/ui/Chip";
 
 export interface FamilyRow {
   id?: number;
@@ -107,6 +108,47 @@ function Row({
           />
         </div>
       </div>
+      <div className="mt-3 flex flex-col gap-1.5">
+        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-light">
+          Category
+        </label>
+        <select
+          value={member.category}
+          onChange={(e) => onUpdate({ category: e.target.value })}
+          className={`${inputClass} max-w-xs`}
+        >
+          <option value="">Select...</option>
+          {FAMILY_CATEGORY_OPTIONS.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="mt-3 flex flex-col gap-1.5">
+        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-light">
+          Sacraments
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {SACRAMENT_OPTIONS.map((opt) => {
+            const selected = member.sacraments.includes(opt);
+            return (
+              <Chip
+                key={opt}
+                label={opt}
+                checked={selected}
+                onChange={() =>
+                  onUpdate({
+                    sacraments: selected
+                      ? member.sacraments.filter((s) => s !== opt)
+                      : [...member.sacraments, opt],
+                  })
+                }
+              />
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -150,12 +192,25 @@ export default function FamilySection({
                 <div className="mb-1 font-serif text-[15px] font-semibold text-teal-dark">
                   {m.data.full_name || `Family member ${i + 1}`}
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[13px] text-slate-light">
+                <section className="flex flex-wrap gap-x-4 gap-y-0.5 text-[13px] text-slate-light">
                   {m.data.relationship && <span>{m.data.relationship}</span>}
                   {m.data.sex && <span>{m.data.sex}</span>}
                   {m.data.age && <span>{m.data.age} yrs</span>}
                   {m.data.occupation && <span>{m.data.occupation}</span>}
-                </div>
+                  {m.data.category && <span>{m.data.category}</span>}
+                </section>
+                {m.data.sacraments.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {m.data.sacraments.map((s) => (
+                      <span
+                        key={s}
+                        className="rounded-full bg-sage-light px-2.5 py-0.5 text-[11px] font-medium text-teal-dark"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

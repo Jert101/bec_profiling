@@ -101,7 +101,7 @@ export function groupBySection(fields: FormFieldConfig[]): { section: string; fi
 
 export function parseOptions(input: string): string[] {
   return input
-    .split(",")
+    .split(/[\n,]+/)
     .map((s) => s.trim())
     .filter(Boolean);
 }

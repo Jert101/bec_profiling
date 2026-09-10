@@ -262,6 +262,8 @@ function familyMemberToDb(form: FamilyMemberForm) {
     sex: emptyToNull(form.sex),
     age: age === "" ? null : Number(age),
     occupation: emptyToNull(form.occupation),
+    category: emptyToNull(form.category),
+    sacraments: Array.isArray(form.sacraments) ? form.sacraments : [],
   };
 }
 

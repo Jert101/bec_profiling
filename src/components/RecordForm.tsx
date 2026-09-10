@@ -87,6 +87,8 @@ export default function RecordForm({
               sex: m.sex ?? "",
               age: m.age !== null && m.age !== undefined ? String(m.age) : "",
               occupation: m.occupation ?? "",
+              category: m.category ?? "",
+              sacraments: m.sacraments ?? [],
             },
           })),
         );
@@ -171,7 +173,7 @@ export default function RecordForm({
         const selectedVicariate = vicariates.find((v) => v.name === form.vicariate);
         options = selectedVicariate
           ? selectedVicariate.parishes.map((p) => p.name)
-          : vicariates.flatMap((v) => v.parishes.map((p) => p.name));
+          : [];
         const current = (value as string) ?? "";
         if (current && !options.includes(current)) options = [current, ...options];
       }
@@ -312,6 +314,38 @@ export default function RecordForm({
     const familyField = fs.find((f) => f.type === "repeater");
     if (familyField) {
       return <FamilySection key={section} members={family} onChange={handleFamilyChange} readOnly={readOnly} />;
+    }
+
+    if (section === "Flags & consent" && flags.length > 0) {
+      return (
+        <Section key={section} title={section}>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            {flags.map((f) => {
+              const checked = Boolean(form[f.name as keyof ResidentForm]);
+              return (
+                <div
+                  key={f.name}
+                  className="flex items-center justify-between gap-3 rounded-md border border-line bg-cream/40 px-3.5 py-2.5"
+                >
+                  <span className="text-sm font-medium text-slate">{f.label}</span>
+                  <button
+                    type="button"
+                    disabled={readOnly}
+                    onClick={() => setValue(f.name as keyof ResidentForm, !checked)}
+                    className={`w-16 cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                      checked
+                        ? "border-sage bg-sage-light text-teal-dark"
+                        : "border-line bg-white text-slate-light"
+                    }`}
+                  >
+                    {checked ? "Yes" : "No"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+      );
     }
 
     if (flags.length === 0 && standard.length === 0) return null;
