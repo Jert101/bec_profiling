@@ -47,22 +47,27 @@ export default function LoginScreen() {
           </div>
 
           <div className="relative">
-            <div className="mb-8 flex items-center gap-3">
-              <Image
-                src="/logo.png"
-                alt="BEC Baseline Family Profiling logo"
-                width={52}
-                height={52}
-                className="h-[52px] w-[52px] rounded-full border-2 border-cream/40 object-cover"
-                priority
-              />
-              <div>
-                <h1 className="font-serif text-xl leading-tight text-cream">
-                  BEC Baseline
-                  <br />
-                  Family Profiling
-                </h1>
+            <div className="mb-8">
+              <div className="flex items-center gap-3">
+                <Image
+                  src="/logo.png"
+                  alt="BEC Baseline Family Profiling logo"
+                  width={52}
+                  height={52}
+                  className="h-[52px] w-[52px] rounded-full border-2 border-cream/40 object-cover"
+                  priority
+                />
+                <div>
+                  <h1 className="font-serif text-xl leading-tight text-cream">
+                    BEC Baseline
+                    <br />
+                    Family Profiling
+                  </h1>
+                </div>
               </div>
+              <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-cream/25 bg-cream/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-gold-light">
+                Diocese of Iligan · BEC Baseline Family Profiling
+              </p>
             </div>
 
             <p className="font-serif text-[28px] leading-snug text-cream">
