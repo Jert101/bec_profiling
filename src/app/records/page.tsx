@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   Building2,
   ChevronLeft,
   ChevronRight,
   FolderOpen,
+  LayoutGrid,
   Search,
   Users,
 } from "lucide-react";
@@ -82,6 +84,7 @@ function RecordsApp() {
   const countInParish = (vicName: string | null, parishName: string) =>
     residents.filter((r) => (!vicName || r.vicariate === vicName) && r.parish === parishName).length;
   const unassignedCount = residents.filter((r) => !r.parish).length;
+  const parishCount = vicariates.reduce((n, v) => n + v.parishes.length, 0);
 
   const goUp = () => {
     setQuery("");
@@ -94,7 +97,7 @@ function RecordsApp() {
 
   const title =
     view === "vicariates"
-      ? "Vicariates"
+      ? "Records"
       : view === "parishes"
         ? `${vic?.name ?? "Parishes"}`
         : parish === UNASSIGNED
@@ -105,22 +108,87 @@ function RecordsApp() {
               : "All records"
             : (parish ?? "Residents");
 
+  const subtitle =
+    view === "vicariates"
+      ? "Browse members by vicariate and parish, or search everything at once."
+      : view === "parishes"
+        ? `Select a parish in ${vic?.name ?? "this vicariate"} to view its members.`
+        : parish === UNASSIGNED
+          ? "Records that are not yet tagged to a parish."
+          : parish === ALL
+            ? `Every member${
+                vic ? ` under ${vic.name}` : ""
+              } in one place — search or browse below.`
+            : `Members of ${parish ?? "this parish"} · ${current.length}${
+                query.trim() ? ` match${current.length === 1 ? "" : "es"} for "${query.trim()}"` : ""
+              }`;
+
   const cardClass =
     "flex cursor-pointer items-center gap-3 rounded-md border border-line bg-white p-4 text-left transition hover:border-teal hover:shadow-[0_2px_12px_rgba(27,77,74,0.10)]";
 
+  const statTile = (href: string, icon: ReactNode, value: number, label: string) => (
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-md border border-line bg-white p-3.5 transition hover:border-teal"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-sage-light text-teal-dark">
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-serif text-[22px] font-bold leading-none text-teal-dark">
+          {value}
+        </span>
+        <span className="block truncate text-[12px] text-slate-light">{label}</span>
+      </span>
+    </Link>
+  );
+
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
-      <div className="mb-2 flex items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         <button
           onClick={goUp}
           disabled={view === "vicariates"}
-          className="flex cursor-pointer items-center gap-1 rounded-md border border-line bg-white px-3 py-1.5 text-xs font-semibold text-teal transition hover:border-teal disabled:cursor-default disabled:opacity-40"
+          className="flex cursor-pointer items-center gap-1 rounded-md border border-line bg-white px-3 py-2 text-xs font-semibold text-teal transition hover:border-teal disabled:cursor-default disabled:opacity-40"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           {backLabel}
         </button>
-        <h1 className="truncate font-serif text-[22px] text-teal-dark">{title}</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-serif text-[22px] text-teal-dark">{title}</h1>
+          {view === "vicariates" && (
+            <p className="text-sm text-slate-light">
+              {stats
+                ? `${stats.total} recorded ${
+                    stats.total === 1 ? "member" : "members"
+                  } across the vicariates.`
+                : "Loading summary..."}
+            </p>
+          )}
+          {(view === "parishes" || view === "residents") && (
+            <p className="truncate text-sm text-slate-light">{subtitle}</p>
+          )}
+        </div>
       </div>
+
+      {view === "vicariates" && (
+        <div className="mb-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+          {statTile(
+            "/records",
+            <Users className="h-5 w-5" />,
+            residents.length,
+            "Total members",
+          )}
+          {statTile("/records", <LayoutGrid className="h-5 w-5" />, vicariates.length, "Vicariates")}
+          {statTile("/records", <Building2 className="h-5 w-5" />, parishCount, "Parishes")}
+          {statTile(
+            "/records",
+            <FolderOpen className="h-5 w-5" />,
+            unassignedCount,
+            "Unassigned",
+          )}
+        </div>
+      )}
 
       <div className="mb-6 flex flex-wrap items-center gap-4">
         {view === "residents" && (
@@ -136,18 +204,16 @@ function RecordsApp() {
           </div>
         )}
 
-        {stats && (
-          <div className="w-full rounded-md border border-line bg-white px-4.5 py-2.5 text-[13px] text-slate-light sm:w-auto sm:whitespace-nowrap">
-            <strong className="font-serif text-base font-bold text-teal-dark">
-              {stats.total}
-            </strong>{" "}
-            {stats.total === 1 ? "record" : "records"}
-          </div>
+        {view === "residents" && !loading && (
+          <span className="text-[13px] text-slate-light">
+            {visible.length} {visible.length === 1 ? "member" : "members"}
+            {query.trim() && current.length !== visible.length ? " shown" : ""}
+          </span>
         )}
 
         <Link
           href="/records/new"
-          className="whitespace-nowrap rounded-md bg-teal px-5 py-3 text-sm font-semibold text-cream transition hover:bg-teal-dark"
+          className="ml-auto whitespace-nowrap rounded-md bg-teal px-5 py-3 text-sm font-semibold text-cream transition hover:bg-teal-dark"
         >
           + New Record
         </Link>
@@ -163,77 +229,89 @@ function RecordsApp() {
         residents.length === 0 && vicariates.length === 0 ? (
           <EmptyState searching={false} />
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-3.5">
-            <button
-              onClick={() => {
-                setQuery("");
-                setVic(null);
-                setParish(ALL);
-              }}
-              className={cardClass}
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-sage-light text-teal-dark">
-                <Users className="h-5 w-5" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-serif text-[15px] font-semibold text-teal-dark">
-                  All records
-                </span>
-                <span className="text-xs text-slate-light">{residents.length} members</span>
-              </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-slate-light" />
-            </button>
-
-            {vicariates.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => {
-                  setQuery("");
-                  setVic(v);
-                  setParish(null);
-                }}
-                className={cardClass}
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-sage-light text-teal-dark">
-                  <Building2 className="h-5 w-5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-serif text-[15px] font-semibold text-teal-dark">
-                    {v.name}
-                  </span>
-                  <span className="text-xs text-slate-light">
-                    {v.parishes.length} parishes · {countInVicariate(v.name)} members
-                  </span>
-                </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-slate-light" />
-              </button>
-            ))}
-
-            {unassignedCount > 0 && (
+          <>
+            <div className="mb-3 flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide text-slate-light">
+              <LayoutGrid className="h-4 w-4" />
+              Vicariates &amp; parishes
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3.5">
               <button
                 onClick={() => {
                   setQuery("");
                   setVic(null);
-                  setParish(UNASSIGNED);
+                  setParish(ALL);
                 }}
                 className={cardClass}
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-cream text-slate-light">
-                  <FolderOpen className="h-5 w-5" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-sage-light text-teal-dark">
+                  <Users className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-serif text-[15px] font-semibold text-slate-dark">
-                    Unassigned
+                  <span className="block truncate font-serif text-[15px] font-semibold text-teal-dark">
+                    All records
                   </span>
-                  <span className="text-xs text-slate-light">{unassignedCount} members</span>
+                  <span className="text-xs text-slate-light">
+                    Everyone in the database · {residents.length} members
+                  </span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-slate-light" />
               </button>
-            )}
-          </div>
+
+              {vicariates.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => {
+                    setQuery("");
+                    setVic(v);
+                    setParish(null);
+                  }}
+                  className={cardClass}
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-sage-light text-teal-dark">
+                    <Building2 className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="block truncate font-serif text-[15px] font-semibold text-teal-dark">
+                        {v.name}
+                      </span>
+                      <span className="shrink-0 rounded bg-cream px-1.5 py-0.5 text-xs font-semibold text-slate-light">
+                        {countInVicariate(v.name)}
+                      </span>
+                    </span>
+                    <span className="text-xs text-slate-light">
+                      {v.parishes.length} {v.parishes.length === 1 ? "parish" : "parishes"}
+                    </span>
+                  </span>
+                </button>
+              ))}
+
+              {unassignedCount > 0 && (
+                <button
+                  onClick={() => {
+                    setQuery("");
+                    setVic(null);
+                    setParish(UNASSIGNED);
+                  }}
+                  className={cardClass}
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-cream text-slate-light">
+                    <FolderOpen className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-serif text-[15px] font-semibold text-slate-dark">
+                      Unassigned
+                    </span>
+                    <span className="text-xs text-slate-light">{unassignedCount} members</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-light" />
+                </button>
+              )}
+            </div>
+          </>
         )
       ) : view === "parishes" && vic ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-3.5">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-3.5">
           <button
             onClick={() => {
               setQuery("");
@@ -248,7 +326,9 @@ function RecordsApp() {
               <span className="block truncate font-serif text-[15px] font-semibold text-teal-dark">
                 All in {vic.name}
               </span>
-              <span className="text-xs text-slate-light">{countInVicariate(vic.name)} members</span>
+              <span className="text-xs text-slate-light">
+                {countInVicariate(vic.name)} {countInVicariate(vic.name) === 1 ? "member" : "members"}
+              </span>
             </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-slate-light" />
           </button>
@@ -270,7 +350,8 @@ function RecordsApp() {
                   {p.name}
                 </span>
                 <span className="text-xs text-slate-light">
-                  {countInParish(vic.name, p.name)} members
+                  {countInParish(vic.name, p.name)}{" "}
+                  {countInParish(vic.name, p.name) === 1 ? "member" : "members"}
                 </span>
               </span>
               <ChevronRight className="h-4 w-4 shrink-0 text-slate-light" />
@@ -286,7 +367,7 @@ function RecordsApp() {
       ) : visible.length > 0 ? (
         <ResidentGrid residents={visible} />
       ) : (
-        <EmptyState searching={query.trim() !== ""} />
+        <EmptyState searching={query.trim() !== "" || view === "residents"} />
       )}
     </div>
   );
