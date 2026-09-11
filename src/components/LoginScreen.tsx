@@ -90,8 +90,8 @@ export default function LoginScreen() {
             </ul>
           </div>
 
-          <p className="relative mt-10 hidden text-xs text-cream/50 lg:block">
-            Created by Jerson L. Catadman
+          <p className="relative mt-10 hidden text-xs tracking-wide text-cream/50 lg:block">
+            BEC Baseline Family Profiling™ · Jerson L. Catadman
           </p>
         </div>
 
@@ -148,9 +148,9 @@ export default function LoginScreen() {
         </form>
       </div>
 
-      <span className="pointer-events-none absolute inset-x-0 bottom-2 -rotate-3 select-none text-center font-serif text-2xl tracking-[0.3em] text-teal/10 sm:text-3xl">
-        JERSON L. CATADMAN
-      </span>
+      <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-[11px] tracking-[0.25em] text-teal/35 select-none">
+        BEC BASELINE FAMILY PROFILING™ · JERSON L. CATADMAN
+      </p>
     </div>
   );
 }
