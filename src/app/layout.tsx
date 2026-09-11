@@ -21,7 +21,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Resident Profiling Database",
+  title: "BEC Baseline Family Profiling",
   description: "Record and search resident profiles during barangay visits",
   manifest: "/manifest.webmanifest",
   icons: {

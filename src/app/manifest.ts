@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "BEC Baseline Resident Profiling",
+    name: "BEC Baseline Family Profiling",
     short_name: "BEC Profiler",
     description:
-      "Record and search resident profiles during barangay visits — vicariates, parishes, and family records.",
+      "Record and search family member profiles during barangay visits — vicariates, parishes, and family records.",
     start_url: "/",
     scope: "/",
     display: "standalone",

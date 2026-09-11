@@ -37,7 +37,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cream px-4 py-10">
+    <div className="relative flex min-h-screen items-center justify-center bg-cream px-4 py-10">
       <div className="grid w-full max-w-4xl overflow-hidden rounded-md border border-line bg-white shadow-[0_12px_48px_rgba(18,53,51,0.14)] lg:grid-cols-2">
         {/* Brand panel */}
         <div className="relative bg-teal px-7 py-10 text-cream sm:px-10 lg:flex lg:flex-col lg:justify-between">
@@ -50,7 +50,7 @@ export default function LoginScreen() {
             <div className="mb-8 flex items-center gap-3">
               <Image
                 src="/logo.png"
-                alt="Resident Profiling Database logo"
+                alt="BEC Baseline Family Profiling logo"
                 width={52}
                 height={52}
                 className="h-[52px] w-[52px] rounded-full border-2 border-cream/40 object-cover"
@@ -60,7 +60,7 @@ export default function LoginScreen() {
                 <h1 className="font-serif text-xl leading-tight text-cream">
                   BEC Baseline
                   <br />
-                  Resident Profiling
+                  Family Profiling
                 </h1>
               </div>
             </div>
@@ -86,7 +86,7 @@ export default function LoginScreen() {
           </div>
 
           <p className="relative mt-10 hidden text-xs text-cream/50 lg:block">
-            Made for the Basic Ecclesial Communities · Diocese of Iligan
+            Created by Jerson L. Catadman
           </p>
         </div>
 
@@ -137,21 +137,15 @@ export default function LoginScreen() {
             {loading ? "Signing in..." : "Sign in"}
           </button>
 
-          <div className="mt-6 rounded-md border border-dashed border-gold bg-gold-light/50 px-4 py-3 text-xs text-slate">
-            <span className="font-semibold">New here?</span> Default codes — Admin:{" "}
-            <span className="font-mono font-semibold">0000</span> · Moderator:{" "}
-            <span className="font-mono font-semibold">1111</span>
-            <br />
-            <span className="text-slate-light">
-              Change them from the Dashboard after signing in.
-            </span>
-          </div>
-
           <p className="mt-6 text-center text-xs text-slate-light">
             Installable on your phone — add this page to your home screen.
           </p>
         </form>
       </div>
+
+      <span className="pointer-events-none absolute inset-x-0 bottom-2 -rotate-3 select-none text-center font-serif text-2xl tracking-[0.3em] text-teal/10 sm:text-3xl">
+        JERSON L. CATADMAN
+      </span>
     </div>
   );
 }
