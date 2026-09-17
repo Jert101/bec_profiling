@@ -19,11 +19,16 @@ import ResidentGrid from "@/components/records/ResidentGrid";
 import EmptyState from "@/components/records/EmptyState";
 import SupabaseSetup from "@/components/SupabaseSetup";
 import PageGuard from "@/components/PageGuard";
+import { useApp } from "@/components/AppProvider";
 
 const ALL = "__all__";
 const UNASSIGNED = "__unassigned__";
 
 function RecordsApp() {
+  const { session } = useApp();
+  const isParishRole = session?.role === "parish";
+  const parishName = session?.parishName ?? null;
+
   const [vicariates, setVicariates] = useState<Vicariate[]>([]);
   const [residents, setResidents] = useState<Resident[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -31,7 +36,9 @@ function RecordsApp() {
   const [error, setError] = useState<string | null>(null);
 
   const [vic, setVic] = useState<Vicariate | null>(null);
-  const [parish, setParish] = useState<string | null>(null);
+  const [parish, setParish] = useState<string | null>(
+    isParishRole ? parishName : null,
+  );
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -51,8 +58,9 @@ function RecordsApp() {
     };
   }, []);
 
-  const view: "vicariates" | "parishes" | "residents" =
-    vic === null && parish === null
+  const view: "vicariates" | "parishes" | "residents" = isParishRole
+    ? "residents"
+    : vic === null && parish === null
       ? "vicariates"
       : vic !== null && parish === null
         ? "parishes"
@@ -147,16 +155,23 @@ function RecordsApp() {
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
       <div className="sticky top-0 z-30 mb-6 rounded-md border border-line bg-white/95 px-4 py-3 shadow-[0_4px_16px_rgba(18,53,51,0.10)] backdrop-blur sm:px-5">
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={goUp}
-            disabled={view === "vicariates"}
-            className="flex cursor-pointer items-center gap-1 rounded-md border border-line bg-white px-3 py-2 text-xs font-semibold text-teal transition hover:border-teal disabled:cursor-default disabled:opacity-40"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            {backLabel}
-          </button>
+          {!isParishRole && (
+            <button
+              onClick={goUp}
+              disabled={view === "vicariates"}
+              className="flex cursor-pointer items-center gap-1 rounded-md border border-line bg-white px-3 py-2 text-xs font-semibold text-teal transition hover:border-teal disabled:cursor-default disabled:opacity-40"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              {backLabel}
+            </button>
+          )}
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-serif text-[22px] text-teal-dark">{title}</h1>
+            {isParishRole && (
+              <h1 className="truncate font-serif text-[22px] text-teal-dark">
+                {parishName ?? "Records"}
+              </h1>
+            )}
+            {!isParishRole && <h1 className="truncate font-serif text-[22px] text-teal-dark">{title}</h1>}
             {view === "vicariates" && (
               <p className="text-sm text-slate-light">
                 {stats
