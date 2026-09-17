@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Search, Trash2, X } from "lucide-react";
 import type { DuplicateMatch, FamilyMember, FormFieldConfig, ResidentForm, Vicariate } from "@/lib/types";
 import { initials, fullName } from "@/lib/types";
 import {
@@ -53,7 +53,7 @@ export default function RecordForm({
   const [dupLoading, setDupLoading] = useState(false);
   const [dupDone, setDupDone] = useState(false);
   const [dupAcknowledged, setDupAcknowledged] = useState(false);
-  const dupBoxRef = useRef<HTMLDivElement | null>(null);
+  const [dupModalOpen, setDupModalOpen] = useState(false);
 
   const dupBlocking = duplicates.some((d) => d.match === "exact_dob");
 
@@ -65,6 +65,7 @@ export default function RecordForm({
         setDuplicates([]);
         setDupDone(false);
         setDupAcknowledged(false);
+        setDupModalOpen(false);
         return;
       }
       setDupLoading(true);
@@ -78,6 +79,7 @@ export default function RecordForm({
           setDuplicates(matches);
           setDupDone(true);
           setDupAcknowledged(false);
+          if (matches.length > 0) setDupModalOpen(true);
         })
         .catch(() => {
           setDuplicates([]);
@@ -169,8 +171,8 @@ export default function RecordForm({
       return;
     }
     if (dupBlocking && !dupAcknowledged) {
+      setDupModalOpen(true);
       showToast("Possible duplicate found — review before saving.", true);
-      dupBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setSaving(true);
@@ -425,7 +427,7 @@ export default function RecordForm({
         </div>
       </div>
 
-      <div ref={dupBoxRef} className="mb-6">
+      <div className="mb-6">
         {dupLoading && duplicates.length === 0 && (
           <div className="flex items-center gap-2 rounded-md border border-line bg-white px-4 py-3 text-sm text-slate-light">
             <Search className="h-4 w-4 animate-pulse" />
@@ -439,59 +441,96 @@ export default function RecordForm({
             No matching records found.
           </div>
         )}
+      </div>
 
-        {duplicates.length > 0 && (
+      {dupModalOpen && duplicates.length > 0 && (
+        <div
+          className="fixed inset-0 z-[998] flex items-center justify-center bg-teal/30 px-4"
+          onClick={() => setDupModalOpen(false)}
+        >
           <div
-            className={`rounded-md border px-4 py-4 ${
-              dupBlocking ? "border-danger/30 bg-[#FCEEEC]" : "border-gold bg-gold-light/50"
-            }`}
+            className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-md bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
           >
-            <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
-              Possible duplicate {duplicates.length === 1 ? "record" : "records"} found
+            <div className="mb-1 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2 text-base font-semibold text-slate">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-danger" />
+                Possible duplicate found
+              </div>
+              <button
+                onClick={() => setDupModalOpen(false)}
+                aria-label="Close duplicate warning"
+                className="cursor-pointer rounded p-1 text-slate-light transition hover:bg-cream hover:text-slate"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <p className="mb-3 text-xs text-slate-light">
+            <p className="mb-4 text-sm text-slate-light">
               {dupBlocking
                 ? "A record with the same name and birthdate already exists. Confirm below if this is a different person."
-                : "Same name found without a matching birthdate. Please verify before saving."}
+                : "Same name found without a matching birthdate. Please review before saving."}
             </p>
-            <ul className="space-y-2">
+
+            <ul className="space-y-3">
               {duplicates.map((d) => (
-                <li key={d.id} className="flex flex-wrap items-center gap-2 text-sm">
-                  <Link
-                    href={`/records/${d.id}`}
-                    className="font-semibold text-teal underline-offset-2 hover:underline"
-                  >
-                    {d.name}
-                  </Link>
-                  <span className="rounded bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-light">
-                    {d.match === "exact_dob" ? "Same birthdate" : "Name match only"}
-                  </span>
-                  {d.dateOfBirth && (
-                    <span className="text-xs text-slate-light">DOB {d.dateOfBirth}</span>
-                  )}
-                  {(d.vicariate || d.parish || d.barangay) && (
-                    <span className="text-xs text-slate-light">
-                      {[d.parish, d.vicariate, d.barangay].filter(Boolean).join(" · ")}
+                <li
+                  key={d.id}
+                  className="rounded-md border border-line bg-cream/50 px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/records/${d.id}`}
+                      className="font-semibold text-teal underline-offset-2 hover:underline"
+                    >
+                      {d.name}
+                    </Link>
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${
+                        d.match === "exact_dob"
+                          ? "bg-[#FCEEEC] text-danger"
+                          : "bg-gold-light text-[#8A6A1F]"
+                      }`}
+                    >
+                      {d.match === "exact_dob" ? "Same birthdate" : "Name match only"}
                     </span>
-                  )}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-light">
+                    {d.dateOfBirth && <span>DOB {d.dateOfBirth}</span>}
+                    {(d.vicariate || d.parish || d.barangay) && (
+                      <span>
+                        {d.dateOfBirth ? " · " : ""}
+                        {[d.parish, d.vicariate, d.barangay].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </p>
                 </li>
               ))}
             </ul>
-            {dupBlocking && (
-              <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={dupAcknowledged}
-                  onChange={(e) => setDupAcknowledged(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-teal"
-                />
-                <span>This is a different person — save anyway.</span>
-              </label>
-            )}
+
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button
+                onClick={() => setDupModalOpen(false)}
+                className="cursor-pointer rounded-md border border-line bg-white px-4 py-2 text-sm font-semibold text-teal transition hover:border-teal"
+              >
+                Review records
+              </button>
+              {dupBlocking && (
+                <button
+                  onClick={() => {
+                    setDupAcknowledged(true);
+                    setDupModalOpen(false);
+                  }}
+                  className="cursor-pointer rounded-md bg-teal px-4 py-2 text-sm font-semibold text-cream transition hover:bg-teal-dark"
+                >
+                  Save anyway
+                </button>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <form
         onSubmit={(e) => {
