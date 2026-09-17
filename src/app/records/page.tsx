@@ -145,29 +145,60 @@ function RecordsApp() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <button
-          onClick={goUp}
-          disabled={view === "vicariates"}
-          className="flex cursor-pointer items-center gap-1 rounded-md border border-line bg-white px-3 py-2 text-xs font-semibold text-teal transition hover:border-teal disabled:cursor-default disabled:opacity-40"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-          {backLabel}
-        </button>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate font-serif text-[22px] text-teal-dark">{title}</h1>
-          {view === "vicariates" && (
-            <p className="text-sm text-slate-light">
-              {stats
-                ? `${stats.total} recorded ${
-                    stats.total === 1 ? "member" : "members"
-                  } across the vicariates.`
-                : "Loading summary..."}
-            </p>
+      <div className="sticky top-0 z-30 mb-6 rounded-md border border-line bg-white/95 px-4 py-3 shadow-[0_4px_16px_rgba(18,53,51,0.10)] backdrop-blur sm:px-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={goUp}
+            disabled={view === "vicariates"}
+            className="flex cursor-pointer items-center gap-1 rounded-md border border-line bg-white px-3 py-2 text-xs font-semibold text-teal transition hover:border-teal disabled:cursor-default disabled:opacity-40"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            {backLabel}
+          </button>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate font-serif text-[22px] text-teal-dark">{title}</h1>
+            {view === "vicariates" && (
+              <p className="text-sm text-slate-light">
+                {stats
+                  ? `${stats.total} recorded ${
+                      stats.total === 1 ? "member" : "members"
+                    } across the vicariates.`
+                  : "Loading summary..."}
+              </p>
+            )}
+            {(view === "parishes" || view === "residents") && (
+              <p className="truncate text-sm text-slate-light">{subtitle}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-line pt-3">
+          {view === "residents" && (
+            <div className="relative w-full min-w-0 flex-1 sm:min-w-[280px]">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-light" />
+              <input
+                type="text"
+                placeholder={`Search within ${title}...`}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full rounded-md border border-line bg-white py-2.5 pl-10 pr-4 font-sans text-[15px] text-slate outline-none transition focus:border-sage focus:ring-3 focus:ring-sage-light"
+              />
+            </div>
           )}
-          {(view === "parishes" || view === "residents") && (
-            <p className="truncate text-sm text-slate-light">{subtitle}</p>
+
+          {view === "residents" && !loading && (
+            <span className="text-[13px] text-slate-light">
+              {visible.length} {visible.length === 1 ? "member" : "members"}
+              {query.trim() && current.length !== visible.length ? " shown" : ""}
+            </span>
           )}
+
+          <Link
+            href="/records/new"
+            className="ml-auto whitespace-nowrap rounded-md bg-teal px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-teal-dark"
+          >
+            + New Record
+          </Link>
         </div>
       </div>
 
@@ -189,35 +220,6 @@ function RecordsApp() {
           )}
         </div>
       )}
-
-      <div className="mb-6 flex flex-wrap items-center gap-4">
-        {view === "residents" && (
-          <div className="relative w-full min-w-0 flex-1 sm:min-w-[280px]">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-light" />
-            <input
-              type="text"
-              placeholder={`Search within ${title}...`}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full rounded-md border border-line bg-white py-3 pl-10 pr-4 font-sans text-[15px] text-slate outline-none transition focus:border-sage focus:ring-3 focus:ring-sage-light"
-            />
-          </div>
-        )}
-
-        {view === "residents" && !loading && (
-          <span className="text-[13px] text-slate-light">
-            {visible.length} {visible.length === 1 ? "member" : "members"}
-            {query.trim() && current.length !== visible.length ? " shown" : ""}
-          </span>
-        )}
-
-        <Link
-          href="/records/new"
-          className="ml-auto whitespace-nowrap rounded-md bg-teal px-5 py-3 text-sm font-semibold text-cream transition hover:bg-teal-dark"
-        >
-          + New Record
-        </Link>
-      </div>
 
       {error ? (
         <div className="rounded-md border border-danger/30 bg-[#FCEEEC] px-5 py-4 text-sm text-danger">

@@ -375,12 +375,12 @@ function PageAccessSection() {
 function DashboardApp() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
-      <div className="mb-6 flex items-center gap-3">
+      <div className="sticky top-0 z-30 mb-6 flex items-center gap-3 rounded-md border border-line bg-white/95 px-4 py-3 shadow-[0_4px_16px_rgba(18,53,51,0.10)] backdrop-blur sm:px-5">
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sage-light text-teal-dark">
           <SlidersHorizontal className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="font-serif text-[26px] text-teal-dark">Dashboard</h1>
+          <h1 className="font-serif text-[24px] text-teal-dark">Dashboard</h1>
           <p className="text-sm text-slate-light">
             Manage access codes, page access, vicariates, and form fields
           </p>

@@ -122,8 +122,8 @@ function StatsApp() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
-      <div className="mb-6">
-        <h1 className="font-serif text-[26px] text-teal-dark">Statistics</h1>
+      <div className="sticky top-0 z-30 mb-6 rounded-md border border-line bg-white/95 px-4 py-3 shadow-[0_4px_16px_rgba(18,53,51,0.10)] backdrop-blur sm:px-5">
+        <h1 className="font-serif text-[24px] text-teal-dark">Statistics</h1>
         <div className="mt-1 text-sm text-slate-light">
           {total > 0
             ? `Breakdown across ${total} recorded ${total === 1 ? "resident" : "residents"}`

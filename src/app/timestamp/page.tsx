@@ -143,9 +143,9 @@ function TimestampApp() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
-      <div className="mb-6 flex flex-wrap items-center gap-4">
+      <div className="sticky top-0 z-30 mb-6 flex flex-wrap items-center gap-4 rounded-md border border-line bg-white/95 px-4 py-3 shadow-[0_4px_16px_rgba(18,53,51,0.10)] backdrop-blur sm:px-5">
         <div className="min-w-0 flex-1">
-          <h1 className="font-serif text-[22px] text-teal-dark">Activity Log</h1>
+          <h1 className="font-serif text-[24px] text-teal-dark">Activity Log</h1>
           <p className="text-sm text-slate-light">
             A timestamp record of every activity in this system — created, updated, deleted, and more.
           </p>

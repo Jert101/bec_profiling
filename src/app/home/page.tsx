@@ -51,9 +51,9 @@ function HomeApp() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="sticky top-0 z-30 mb-6 flex flex-wrap items-center justify-between gap-4 rounded-md border border-line bg-white/95 px-4 py-3 shadow-[0_4px_16px_rgba(18,53,51,0.10)] backdrop-blur sm:px-5">
         <div>
-          <h1 className="font-serif text-[28px] text-teal-dark">Overview</h1>
+          <h1 className="font-serif text-[26px] text-teal-dark">Overview</h1>
           <p className="text-sm text-slate-light">
             Welcome back. Here is what&apos;s happening in your parish database.
           </p>

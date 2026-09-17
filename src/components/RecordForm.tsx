@@ -377,7 +377,7 @@ export default function RecordForm({
 
   return (
     <div>
-      <div className="mb-7 flex flex-wrap items-start justify-between gap-5 border-b-2 border-teal pb-5">
+      <div className="sticky top-0 z-30 mb-7 flex flex-wrap items-start justify-between gap-5 rounded-md border border-line bg-white/95 px-4 py-3 shadow-[0_4px_16px_rgba(18,53,51,0.10)] backdrop-blur sm:px-5">
         <div className="flex items-start gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-sage-light font-serif text-[22px] font-bold text-teal-dark">
             {isNew ? "+" : initials(initial)}
