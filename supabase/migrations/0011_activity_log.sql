@@ -39,6 +39,12 @@ create index if not exists activity_log_action_idx
   on public.activity_log (action);
 
 -- Give every role access to the new Activity Log page by default.
+-- First widen the page CHECK constraint to admit the new page.
+alter table public.role_pages drop constraint if exists role_pages_page_check;
+alter table public.role_pages
+  add constraint role_pages_page_check
+  check (page in ('dashboard', 'records', 'stats', 'logs'));
+
 insert into public.role_pages (role, page)
 select r.role, 'logs'
 from (values ('admin'), ('moderator')) as r(role)
