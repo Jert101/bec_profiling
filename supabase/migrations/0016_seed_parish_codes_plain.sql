@@ -23,7 +23,10 @@ select p.id,
    select 1 from parish_codes pc
     where pc.parish_id = p.id
       and pc.code_plain is not null
- );
+ )
+on conflict (parish_id)
+do update set code_hash = excluded.code_hash,
+              code_plain = excluded.code_plain;
 
 -- Print every parish and its current access code (NULL = not set yet).
 select p.id as parish_id,
