@@ -39,7 +39,9 @@ export default function RecordForm({
   id?: number;
 }) {
   const router = useRouter();
-  const { showToast, confirmDelete } = useApp();
+  const { session, showToast, confirmDelete } = useApp();
+  const isParishRole = session?.role === "parish";
+  const lockParishId = session?.parishId ?? null;
   const readOnly = false;
   const [form, setForm] = useState<ResidentForm>(initial);
   const [family, setFamily] = useState<FamilyRow[]>([]);
@@ -104,6 +106,12 @@ export default function RecordForm({
       .then((data) => {
         if (!alive) return;
         setVicariates(data);
+        if (isParishRole && isNew && lockParishId) {
+          const mine = data
+            .flatMap((v) => v.parishes.map((p) => ({ vicariate: v.name, ...p })))
+            .find((p) => p.id === lockParishId);
+          if (mine) setForm((prev) => ({ ...prev, vicariate: mine.vicariate, parish: mine.name }));
+        }
       })
       .catch(() => {
         /* keep empty */
@@ -111,7 +119,7 @@ export default function RecordForm({
     return () => {
       alive = false;
     };
-  }, []);
+  }, [isNew, isParishRole, lockParishId]);
 
   useEffect(() => {
     if (isNew || id === undefined) return;
@@ -145,6 +153,12 @@ export default function RecordForm({
 
   const groups = groupBySection(fields);
 
+  const resolveParishId = (): number | null => {
+    const vic = vicariates.find((v) => v.name === form.vicariate);
+    if (!vic) return null;
+    return vic.parishes.find((p) => p.name === form.parish)?.id ?? null;
+  };
+
   const syncFamily = async (residentId: number) => {
     const toCreate = family.filter((m) => m.id === undefined).map((m) => m.data);
     await createFamilyMembers(residentId, toCreate);
@@ -177,12 +191,13 @@ export default function RecordForm({
     }
     setSaving(true);
     try {
+      const parishId = isParishRole ? lockParishId : resolveParishId();
       if (isNew) {
-        const resident = await createResident(form);
+        const resident = await createResident(form, parishId);
         await syncFamily(resident.id);
         showToast("Record added");
       } else if (id !== undefined) {
-        await updateResident(id, form);
+        await updateResident(id, form, parishId);
         await syncFamily(id);
         showToast("Record updated");
       }
@@ -230,7 +245,7 @@ export default function RecordForm({
             label={f.label}
             name={f.name}
             value={(value as string) ?? ""}
-            disabled={readOnly}
+            disabled={readOnly || isParishRole}
             required={f.required}
             onChange={(v) => {
               setValue(f.name as keyof ResidentForm, v);

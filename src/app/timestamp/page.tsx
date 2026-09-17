@@ -51,6 +51,8 @@ function actionIcon(action: string): { icon: ReactNode; tone: string } {
     return { icon: <Users className="h-4 w-4" />, tone: "bg-sage-light text-teal-dark" };
   if (action.startsWith("vicariate.") || action.startsWith("parish."))
     return { icon: <Building2 className="h-4 w-4" />, tone: "bg-gold-light text-[#8A6A1F]" };
+  if (action.startsWith("parish_code."))
+    return { icon: <KeyRound className="h-4 w-4" />, tone: "bg-gold-light text-[#8A6A1F]" };
   if (action === "form_fields.updated") return { icon: <FolderCog className="h-4 w-4" />, tone: "bg-gold-light text-[#8A6A1F]" };
   if (action === "role_pages.updated") return { icon: <ShieldCheck className="h-4 w-4" />, tone: "bg-gold-light text-[#8A6A1F]" };
   if (action === "code.changed") return { icon: <KeyRound className="h-4 w-4" />, tone: "bg-gold-light text-[#8A6A1F]" };
@@ -216,6 +218,7 @@ function TimestampApp() {
           <option value="all">Any user</option>
           <option value="admin">Admin</option>
           <option value="moderator">Moderator</option>
+          <option value="parish">Parish</option>
         </select>
       </div>
 
@@ -257,7 +260,7 @@ function TimestampApp() {
                   <span className="text-xs font-medium text-teal">{timeFmt.format(new Date(r.created_at))}</span>
                   <span className="flex items-center gap-1.5 text-[11px] text-slate-light">
                     <span className="rounded-full bg-cream px-1.5 py-0.5 font-semibold uppercase tracking-wide">
-                      {r.acted_by === "admin" ? "Admin" : r.acted_by === "moderator" ? "Moderator" : "System"}
+                      {r.acted_by === "admin" ? "Admin" : r.acted_by === "parish" ? "Parish" : r.acted_by === "moderator" ? "Moderator" : "System"}
                     </span>
                     <span className="text-slate-light/70">{relativeTime(r.created_at)}</span>
                   </span>

@@ -1,45 +1,106 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Save, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
-import type { FormFieldConfig, PageKey, Role } from "@/lib/types";
+import { Save, ShieldCheck, ShieldOff, SlidersHorizontal, X } from "lucide-react";
+import type { FormFieldConfig } from "@/lib/types";
 import { getFormFields, updateFormFields } from "@/lib/residents";
 import { DEFAULT_FORM_FIELDS, groupBySection, isLocked, parseOptions } from "@/lib/formConfig";
-import { ALL_PAGES, getRolePages, setRolePages } from "@/lib/permissions";
 import { useApp } from "@/components/AppProvider";
 import RoleGuard from "@/components/RoleGuard";
 import Section from "@/components/ui/Section";
 import VicariateManager from "@/components/VicariateManager";
+import {
+  listParishCodes,
+  setParishCode,
+  clearParishCode,
+  type ParishCodeInfo,
+} from "@/lib/parishCodes";
 
 function CodesSection() {
-  const { changeCode, showToast } = useApp();
+  const { showToast, changeCode } = useApp();
   const [adminNew, setAdminNew] = useState("");
-  const [modNew, setModNew] = useState("");
+  const [parishes, setParishes] = useState<ParishCodeInfo[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [adminAuth, setAdminAuth] = useState("");
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState<number | null>(null);
 
-  const reset = () => {
-    setAdminNew("");
-    setModNew("");
-    setAdminAuth("");
+  const refresh = async () => {
+    try {
+      setParishes(await listParishCodes());
+    } catch {
+      showToast("Could not load parish access codes.", true);
+    }
   };
 
-  const saveCode = async (target: "admin" | "moderator", newPin: string) => {
-    const label = target === "admin" ? "Admin" : "Moderator";
-    if (!newPin.trim()) {
-      showToast(`Enter a new ${label} access code.`, true);
+  const changeAdmin = async () => {
+    const code = adminNew.trim();
+    if (code.length < 6) {
+      showToast("Use at least 6 characters for the access code.", true);
       return;
     }
     if (!adminAuth.trim()) {
       showToast("Enter your admin access code to authorize.", true);
       return;
     }
-    setBusy(target);
-    const { result, message } = await changeCode(target, newPin.trim(), adminAuth.trim());
+    setBusy(-1);
+    const { result, message } = await changeCode("admin", code, adminAuth.trim());
     setBusy(null);
     if (result === "ok") {
       showToast(message);
-      reset();
+      setAdminNew("");
+      setAdminAuth("");
+    } else {
+      showToast(message, true);
+    }
+  };
+
+  useEffect(() => {
+    let alive = true;
+    listParishCodes()
+      .then((p) => alive && setParishes(p))
+      .catch(() => {})
+      .finally(() => alive && setLoaded(true));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const saveCode = async (p: ParishCodeInfo) => {
+    const code = (drafts[p.parish_id] ?? "").trim();
+    if (code.length < 6) {
+      showToast("Use at least 6 characters for the access code.", true);
+      return;
+    }
+    if (!adminAuth.trim()) {
+      showToast("Enter your admin access code to authorize.", true);
+      return;
+    }
+    setBusy(p.parish_id);
+    const { result, message } = await setParishCode(p.parish_id, code, adminAuth.trim(), p.parish_name);
+    setBusy(null);
+    if (result === "ok") {
+      showToast(message);
+      setDrafts((prev) => ({ ...prev, [p.parish_id]: "" }));
+      setAdminAuth("");
+      await refresh();
+    } else {
+      showToast(message, true);
+    }
+  };
+
+  const removeCode = async (p: ParishCodeInfo) => {
+    if (!adminAuth.trim()) {
+      showToast("Enter your admin access code to authorize.", true);
+      return;
+    }
+    setBusy(p.parish_id);
+    const { result, message } = await clearParishCode(p.parish_id, adminAuth.trim(), p.parish_name);
+    setBusy(null);
+    if (result === "ok") {
+      showToast(message);
+      setAdminAuth("");
+      await refresh();
     } else {
       showToast(message, true);
     }
@@ -49,60 +110,118 @@ function CodesSection() {
     "w-full rounded-md border border-line bg-white px-3 py-2 font-mono text-sm tracking-widest text-slate outline-none transition focus:border-sage focus:ring-3 focus:ring-sage-light";
 
   return (
-    <Section title="User access codes">
+    <Section title="Parish access codes">
       <p className="mb-4 text-sm text-slate-light">
-        Set or reset the access codes for each user. Seed defaults: Admin{" "}
-        <span className="font-mono">0000</span> · Moderator{" "}
-        <span className="font-mono">1111</span>. Codes are stored hashed.
+        Give each parish its own access code. Holders can only view and manage records belonging
+        to their parish. Codes must be at least 6 characters and are stored hashed.
       </p>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {(
-          [
-            { key: "admin" as const, label: "Admin", newVal: adminNew, setNew: setAdminNew },
-            { key: "moderator" as const, label: "Moderator", newVal: modNew, setNew: setModNew },
-          ]
-        ).map(({ key, label, newVal, setNew }) => (
-          <div key={key} className="rounded-md border border-line bg-cream/50 p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-teal-dark">
-              <ShieldCheck className="h-4 w-4 text-sage" />
-              {label}
-            </div>
-            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-light">
-              New access code
-            </label>
+      <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="rounded-md border border-line bg-cream/40 p-4">
+          <div className="mb-2 text-sm font-bold text-teal-dark">Your admin access code</div>
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="password"
               inputMode="numeric"
-              value={newVal}
-              onChange={(e) => setNew(e.target.value)}
-              placeholder="Enter new code"
-              className={fieldClass}
+              value={adminNew}
+              onChange={(e) => setAdminNew(e.target.value)}
+              placeholder="New admin code..."
+              className={`${fieldClass} max-w-[220px]`}
             />
             <button
-              onClick={() => saveCode(key, newVal)}
+              onClick={changeAdmin}
               disabled={busy !== null}
-              className="mt-3 w-full cursor-pointer rounded-md bg-teal px-4 py-2 text-sm font-semibold text-cream transition hover:bg-teal-dark disabled:opacity-60"
+              className="cursor-pointer rounded-md border border-teal bg-white px-4 py-2 text-sm font-semibold text-teal transition hover:bg-teal hover:text-cream disabled:opacity-60"
             >
-              {busy === key ? "Saving..." : `Update ${label} code`}
+              {busy === -1 ? "Saving..." : "Update admin code"}
             </button>
           </div>
-        ))}
+        </div>
+
+        <div className="rounded-md border border-line bg-cream/40 p-4">
+          <div className="mb-2 text-sm font-bold text-teal-dark">Authorize changes</div>
+          <input
+            type="password"
+            inputMode="numeric"
+            value={adminAuth}
+            onChange={(e) => setAdminAuth(e.target.value)}
+            placeholder="Admin code"
+            className={fieldClass}
+          />
+        </div>
       </div>
 
-      <div className="mt-4">
-        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-light">
-          Your admin access code (to authorize changes)
-        </label>
-        <input
-          type="password"
-          inputMode="numeric"
-          value={adminAuth}
-          onChange={(e) => setAdminAuth(e.target.value)}
-          placeholder="Admin code"
-          className={`${fieldClass} max-w-xs`}
-        />
-      </div>
+      {!loaded ? (
+        <p className="text-sm text-slate-light">Loading parishes...</p>
+      ) : parishes.length === 0 ? (
+        <p className="rounded-md border border-dashed border-line bg-cream/50 px-4 py-6 text-sm text-slate-light">
+          No parishes have been set up yet. Add vicariates and parishes first.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {parishes.map((p) => (
+            <div
+              key={p.parish_id}
+              className="rounded-md border border-line bg-cream/50 p-4"
+            >
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-2 text-sm font-bold text-teal-dark">
+                  <ShieldCheck className="h-4 w-4 text-sage" />
+                  {p.parish_name}
+                </span>
+                <span className="text-xs text-slate-light">{p.vicariate_name}</span>
+                <span
+                  className={`ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                    p.code_set
+                      ? "bg-sage-light text-teal-dark"
+                      : "bg-cream text-slate-light"
+                  }`}
+                >
+                  {p.code_set ? (
+                    <>
+                      <ShieldCheck className="h-3 w-3" /> Code set
+                    </>
+                  ) : (
+                    <>
+                      <ShieldOff className="h-3 w-3" /> No code
+                    </>
+                  )}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  value={drafts[p.parish_id] ?? ""}
+                  onChange={(e) =>
+                    setDrafts((prev) => ({ ...prev, [p.parish_id]: e.target.value }))
+                  }
+                  placeholder={p.code_set ? "New access code..." : "Set access code..."}
+                  className={`${fieldClass} max-w-[220px]`}
+                />
+                <button
+                  onClick={() => saveCode(p)}
+                  disabled={busy !== null}
+                  className="cursor-pointer rounded-md bg-teal px-4 py-2 text-sm font-semibold text-cream transition hover:bg-teal-dark disabled:opacity-60"
+                >
+                  {busy === p.parish_id ? "Saving..." : p.code_set ? "Rotate code" : "Set code"}
+                </button>
+                {p.code_set && (
+                  <button
+                    onClick={() => removeCode(p)}
+                    disabled={busy !== null}
+                    className="flex cursor-pointer items-center gap-1 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold text-slate-light transition hover:border-danger hover:text-danger disabled:opacity-60"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
@@ -278,100 +397,6 @@ function FieldsSection() {
   );
 }
 
-function PageAccessSection() {
-  const { showToast } = useApp();
-  const [pages, setPages] = useState<PageKey[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const role: Role = "moderator";
-
-  useEffect(() => {
-    let alive = true;
-    getRolePages(role)
-      .then((p) => alive && setPages(p))
-      .catch(() => {})
-      .finally(() => alive && setLoaded(true));
-    return () => {
-      alive = false;
-    };
-  }, [role]);
-
-  const toggle = (page: PageKey) =>
-    setPages((prev) => (prev.includes(page) ? prev.filter((p) => p !== page) : [...prev, page]));
-
-  const label = (page: PageKey) =>
-    page === "dashboard"
-      ? "Dashboard"
-      : page === "records"
-        ? "Records"
-        : page === "stats"
-          ? "Stats"
-          : "Activity Log";
-
-  const save = async () => {
-    setSaving(true);
-    try {
-      await setRolePages(role, pages);
-      showToast("Moderator page access saved");
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : "Could not save page access", true);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Section title="User page access">
-      <p className="mb-4 text-sm text-slate-light">
-        Choose which pages each user can open. All users can fully use every function inside the
-        pages they are granted. Admin always has access to everything.
-      </p>
-
-      {!loaded ? (
-        <p className="text-sm text-slate-light">Loading page access...</p>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <div className="rounded-md border border-line bg-cream/50 p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-bold text-teal-dark">
-              <Users className="h-4 w-4 text-sage" />
-              Moderator
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {ALL_PAGES.map((page) => {
-                const enabled = pages.includes(page);
-                return (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => toggle(page)}
-                    className={`cursor-pointer rounded-md border px-4 py-2 text-sm font-semibold transition ${
-                      enabled
-                        ? "border-teal bg-teal text-cream hover:bg-teal-dark"
-                        : "border-line bg-white text-slate-light hover:border-teal"
-                    }`}
-                  >
-                    {label(page)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <button
-              onClick={save}
-              disabled={saving}
-              className="flex cursor-pointer items-center gap-2 rounded-md bg-teal px-5 py-2.5 text-sm font-semibold text-cream transition hover:bg-teal-dark disabled:opacity-60"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? "Saving..." : "Save page access"}
-            </button>
-          </div>
-        </div>
-      )}
-    </Section>
-  );
-}
-
 function DashboardApp() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-7 sm:px-6 lg:px-10">
@@ -382,13 +407,12 @@ function DashboardApp() {
         <div>
           <h1 className="font-serif text-[24px] text-teal-dark">Dashboard</h1>
           <p className="text-sm text-slate-light">
-            Manage access codes, page access, vicariates, and form fields
+            Manage parish access codes, vicariates, and form fields
           </p>
         </div>
       </div>
 
       <CodesSection />
-      <PageAccessSection />
       <VicariateManager />
       <FieldsSection />
     </div>

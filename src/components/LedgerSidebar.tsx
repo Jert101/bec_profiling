@@ -21,6 +21,12 @@ export default function LedgerSidebar() {
   const [total, setTotal] = useState<number | null>(null);
 
   const isAdmin = session?.role === "admin";
+  const roleLabel =
+    isAdmin
+      ? "Admin"
+      : session?.role === "parish"
+        ? (session.parishName ?? "Parish")
+        : "Moderator";
   const tabs = pages.map((view) => ({
     view,
     label: TAB_DEFS[view].label,
@@ -82,7 +88,7 @@ export default function LedgerSidebar() {
           total
         </span>
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-          {isAdmin ? "Admin" : "Moderator"}
+          {roleLabel}
         </span>
         <button
           onClick={logout}

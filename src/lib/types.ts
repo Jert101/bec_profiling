@@ -9,6 +9,7 @@ export interface Resident {
   civil_status: string | null;
   vicariate: string | null;
   parish: string | null;
+  parish_id: number | null;
   matrimony: string | null;
   matrimony_date: string | null;
   bec_cell_name: string | null;
@@ -103,7 +104,7 @@ export interface FormFieldConfig {
   sort_order: number;
 }
 
-export type Role = "admin" | "moderator";
+export type Role = "admin" | "moderator" | "parish";
 
 export type PageKey = "dashboard" | "records" | "stats" | "logs";
 
@@ -119,6 +120,8 @@ export type DuplicateMatch = {
 
 export interface Session {
   role: Role;
+  parishId?: number | null;
+  parishName?: string | null;
 }
 
 export function fullName(r: Pick<Resident, "first_name" | "middle_name" | "last_name" | "suffix">): string {

@@ -79,6 +79,8 @@ export const ACTION_LABELS: Record<string, string> = {
   "form_fields.updated": "Form layout updated",
   "role_pages.updated": "Page access updated",
   "code.changed": "Access code changed",
+  "parish_code.set": "Parish code set",
+  "parish_code.clear": "Parish code removed",
   "auth.login": "Signed in",
   "auth.login_failed": "Sign-in failed",
   "auth.logout": "Signed out",
@@ -121,6 +123,10 @@ export function describeActivity(row: ActivityLogRow): string {
         : "Moderator access: none";
     case "code.changed":
       return d.targetKey ? `${String(d.targetKey)} access code` : "";
+    case "parish_code.set":
+      return d.parishName ? `Access code set for ${String(d.parishName)}` : "";
+    case "parish_code.clear":
+      return d.parishName ? `Access code removed for ${String(d.parishName)}` : "";
     case "auth.login":
       return d.role ? `as ${String(d.role).replace(/^./, (c) => c.toUpperCase())}` : "";
     case "auth.login_failed":

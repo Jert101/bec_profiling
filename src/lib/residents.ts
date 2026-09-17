@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { logActivity } from "./activity";
+import { getSessionSnapshot } from "./auth";
 import { fullName } from "./types";
 import type {
   DuplicateMatch,
@@ -12,6 +13,14 @@ import type {
   Stats,
   Vicariate,
 } from "./types";
+
+// Returns the parish id that the current session is scoped to, or null for
+// admin/global access. Every residents query below applies this filter.
+function parishScope(): number | null {
+  const session = getSessionSnapshot();
+  if (session?.role !== "parish" || !session.parishId) return null;
+  return session.parishId;
+}
 
 const SEARCH_COLUMNS = [
   "first_name",
@@ -34,6 +43,9 @@ export async function searchResidents(query = ""): Promise<Resident[]> {
     .order("last_name")
     .order("first_name");
 
+  const parishId = parishScope();
+  if (parishId) request = request.eq("parish_id", parishId);
+
   if (q) {
     const orClause = SEARCH_COLUMNS.map((c) => `${c}.ilike.%${q}%`).join(",");
     request = request.or(orClause);
@@ -45,11 +57,10 @@ export async function searchResidents(query = ""): Promise<Resident[]> {
 }
 
 export async function getResident(id: number): Promise<Resident | null> {
-  const { data, error } = await supabase
-    .from("residents")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  let request = supabase.from("residents").select("*").eq("id", id);
+  const parishId = parishScope();
+  if (parishId) request = request.eq("parish_id", parishId);
+  const { data, error } = await request.maybeSingle();
   if (error) throw new Error(error.message);
   return (data as Resident) ?? null;
 }
@@ -72,9 +83,12 @@ export async function findPotentialDuplicates({
   const dob = (dateOfBirth ?? "").trim() || null;
   if (!fn || !ln) return [];
 
-  const { data, error } = await supabase
+  let request = supabase
     .from("residents")
     .select("id, first_name, middle_name, last_name, suffix, date_of_birth, barangay, parish, vicariate");
+  const parishId = parishScope();
+  if (parishId) request = request.eq("parish_id", parishId);
+  const { data, error } = await request;
   if (error) throw new Error(error.message);
 
   const matches: DuplicateMatch[] = [];
@@ -97,25 +111,40 @@ export async function findPotentialDuplicates({
 }
 
 export async function getTotalCount(): Promise<number> {
-  const { count, error } = await supabase
+  let request = supabase
     .from("residents")
     .select("*", { count: "exact", head: true });
+  const parishId = parishScope();
+  if (parishId) request = request.eq("parish_id", parishId);
+  const { count, error } = await request;
   if (error) throw new Error(error.message);
   return count ?? 0;
 }
 
 export async function getStats(): Promise<Stats> {
-  const { count, error } = await supabase
+  let request = supabase
     .from("residents")
     .select("*", { count: "exact", head: true });
+  const parishId = parishScope();
+  if (parishId) request = request.eq("parish_id", parishId);
+  const { count, error } = await request;
   if (error) throw new Error(error.message);
   return { total: count ?? 0 };
 }
 
 export async function getFamilyStats(): Promise<FamilyStats> {
-  const { data, error, count } = await supabase
-    .from("family_members")
-    .select("category", { count: "exact" });
+  const parishId = parishScope();
+  let query = supabase.from("family_members").select("category", { count: "exact" });
+  if (parishId) {
+    const { data: ids, error: idErr } = await supabase
+      .from("residents")
+      .select("id")
+      .eq("parish_id", parishId);
+    if (idErr) throw new Error(idErr.message);
+    if (!ids || ids.length === 0) return { total: 0, byCategory: [] };
+    query = query.in("resident_id", ids.map((r) => r.id));
+  }
+  const { data, error, count } = await query;
   if (error) throw new Error(error.message);
   const map = new Map<string, number>();
   for (const row of data ?? []) {
@@ -128,7 +157,7 @@ export async function getFamilyStats(): Promise<FamilyStats> {
   return { total: count ?? 0, byCategory };
 }
 
-function toDb(form: ResidentForm) {
+function toDb(form: ResidentForm, parishId?: number | null) {
   const emptyToNull = <K extends keyof ResidentForm>(k: K) => {
     const v = form[k];
     return typeof v === "string" && v.trim() === "" ? null : v;
@@ -144,6 +173,7 @@ function toDb(form: ResidentForm) {
     civil_status: emptyToNull("civil_status"),
     vicariate: emptyToNull("vicariate"),
     parish: emptyToNull("parish"),
+    parish_id: parishId ?? null,
     matrimony: emptyToNull("matrimony"),
     matrimony_date: emptyToNull("matrimony_date") || null,
     bec_cell_name: emptyToNull("bec_cell_name"),
@@ -305,10 +335,12 @@ export async function deleteParish(id: number): Promise<void> {
   });
 }
 
-export async function createResident(form: ResidentForm): Promise<Resident> {
+export async function createResident(form: ResidentForm, parishId?: number | null): Promise<Resident> {
+  const scoped = parishScope();
+  const resolvedParishId = scoped ?? parishId ?? null;
   const { data, error } = await supabase
     .from("residents")
-    .insert(toDb(form))
+    .insert(toDb(form, resolvedParishId))
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -326,13 +358,15 @@ export async function createResident(form: ResidentForm): Promise<Resident> {
   return data as Resident;
 }
 
-export async function updateResident(id: number, form: ResidentForm): Promise<Resident> {
-  const { data, error } = await supabase
+export async function updateResident(id: number, form: ResidentForm, parishId?: number | null): Promise<Resident> {
+  const scoped = parishScope();
+  const resolvedParishId = scoped ?? parishId ?? null;
+  let request = supabase
     .from("residents")
-    .update(toDb(form))
-    .eq("id", id)
-    .select()
-    .single();
+    .update(toDb(form, resolvedParishId))
+    .eq("id", id);
+  if (scoped) request = request.eq("parish_id", scoped);
+  const { data, error } = await request.select().single();
   if (error) throw new Error(error.message);
   await logActivity({
     action: "resident.updated",
@@ -349,12 +383,15 @@ export async function updateResident(id: number, form: ResidentForm): Promise<Re
 }
 
 export async function deleteResident(id: number): Promise<void> {
-  const { data: before } = await supabase
-    .from("residents")
+  const p = parishScope();
+  const request = supabase.from("residents");
+  const { data: before } = await request
     .select("id, first_name, last_name")
     .eq("id", id)
     .maybeSingle();
-  const { error } = await supabase.from("residents").delete().eq("id", id);
+  let del = supabase.from("residents").delete().eq("id", id);
+  if (p) del = del.eq("parish_id", p);
+  const { error } = await del;
   if (error) throw new Error(error.message);
   await logActivity({
     action: "resident.deleted",

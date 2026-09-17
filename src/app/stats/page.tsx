@@ -8,6 +8,7 @@ import { calcAge } from "@/lib/types";
 import { SACRAMENT_OPTIONS } from "@/lib/constants";
 import SupabaseSetup from "@/components/SupabaseSetup";
 import PageGuard from "@/components/PageGuard";
+import { useApp } from "@/components/AppProvider";
 
 type Bucket = { label: string; count: number; pct: number };
 
@@ -68,6 +69,7 @@ function EmptyHint({ text }: { text: string }) {
 }
 
 function StatsApp() {
+  const { session } = useApp();
   const [residents, setResidents] = useState<Resident[]>([]);
   const [vicariates, setVicariates] = useState<Vicariate[]>([]);
   const [familyStats, setFamilyStats] = useState<FamilyStats | null>(null);
@@ -107,9 +109,18 @@ function StatsApp() {
   const male = sexBuckets.find((b) => b.label === "Male")?.count ?? 0;
   const female = sexBuckets.find((b) => b.label === "Female")?.count ?? 0;
   const seniors = ageBuckets.find((b) => b.label === "Senior (60+)")?.count ?? 0;
-  const parishCount = vicariates.reduce((n, v) => n + v.parishes.length, 0);
+  const isParishRole = session?.role === "parish";
+  const parishCount = isParishRole
+    ? 1
+    : vicariates.reduce((n, v) => n + v.parishes.length, 0);
   const countInParish = (vicName: string, parishName: string) =>
     residents.filter((r) => r.vicariate === vicName && r.parish === parishName).length;
+
+  const myParish = isParishRole
+    ? vicariates
+        .flatMap((v) => v.parishes.map((p) => ({ vicName: v.name, parish: p })))
+        .find(({ parish: p }) => p.name === session?.parishName) ?? null
+    : null;
 
   const summary = [
     { label: "Total members", value: total },
@@ -184,6 +195,20 @@ function StatsApp() {
         <Block title="Members per parish">
           {vicariates.length === 0 ? (
             <EmptyHint text="No vicariates have been set up yet." />
+          ) : isParishRole && myParish ? (
+            <div className="flex flex-col gap-4">
+              <h3 className="mb-1.5 text-[13px] font-bold uppercase tracking-wide text-teal-dark">
+                {myParish.vicName}
+              </h3>
+              <ul className="flex flex-col gap-1">
+                <li className="flex items-center justify-between gap-3 text-[13px]">
+                  <span className="truncate text-slate">{myParish.parish.name}</span>
+                  <span className="shrink-0 rounded bg-cream px-2 py-0.5 font-semibold text-slate-light">
+                    {countInParish(myParish.vicName, myParish.parish.name)}
+                  </span>
+                </li>
+              </ul>
+            </div>
           ) : (
             <div className="flex flex-col gap-4">
               {vicariates.map((v) => (

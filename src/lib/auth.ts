@@ -1,8 +1,9 @@
 import { supabase } from "./supabase";
 import { logActivity } from "./activity";
-import type { Role, Session } from "./types";
+import type { Session } from "./types";
 
 const SESSION_KEY = "resident_profiler_session";
+const VALID_ROLES = ["admin", "moderator", "parish"] as const;
 
 // --- Tiny external store (sessionStorage-backed) ---
 let current: Session | null = null;
@@ -13,7 +14,7 @@ if (typeof window !== "undefined") {
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Session;
-      if (parsed && (parsed.role === "admin" || parsed.role === "moderator")) {
+      if (parsed && VALID_ROLES.includes(parsed.role)) {
         current = parsed;
       }
     }
@@ -53,15 +54,37 @@ export function logoutSession() {
 export async function loginWithPin(pin: string): Promise<Session | null> {
   const { data, error } = await supabase.rpc("app_login", { pin });
   if (error) throw new Error(error.message);
-  const role = data as Role | null;
-  if (!role || (role !== "admin" && role !== "moderator")) {
-    logActivity({ action: "auth.login_failed", entity: "auth" });
-    return null;
+  const identity = data as string | null;
+
+  if (identity === "admin") {
+    const session: Session = { role: "admin" };
+    commit(session);
+    logActivity({ action: "auth.login", entity: "auth", details: { role: "admin" } });
+    return session;
   }
-  const session: Session = { role };
-  commit(session);
-  logActivity({ action: "auth.login", entity: "auth", details: { role } });
-  return session;
+
+  if (identity?.startsWith("parish:")) {
+    const parishId = Number(identity.slice("parish:".length));
+    if (Number.isFinite(parishId) && parishId > 0) {
+      const { data: p } = await supabase
+        .from("parishes")
+        .select("name")
+        .eq("id", parishId)
+        .maybeSingle();
+      const parishName = (p as { name?: string } | null)?.name ?? null;
+      const session: Session = { role: "parish", parishId, parishName };
+      commit(session);
+      logActivity({
+        action: "auth.login",
+        entity: "auth",
+        details: { role: "parish", parishId, parishName },
+      });
+      return session;
+    }
+  }
+
+  logActivity({ action: "auth.login_failed", entity: "auth" });
+  return null;
 }
 
 export type ChangeCodeResult = "ok" | "auth_required" | "invalid_pin" | "not_found" | "error";
