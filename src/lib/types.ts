@@ -122,6 +122,8 @@ export interface Session {
   role: Role;
   parishId?: number | null;
   parishName?: string | null;
+  issuedAt?: number;
+  lastActive?: number;
 }
 
 export function fullName(r: Pick<Resident, "first_name" | "middle_name" | "last_name" | "suffix">): string {

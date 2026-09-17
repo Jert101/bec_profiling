@@ -6,9 +6,16 @@ export interface ParishCodeInfo {
   vicariate_name: string;
   parish_name: string;
   code_set: boolean;
+  code_plain: string | null;
 }
 
-export type ParishCodeResult = "ok" | "auth_required" | "too_short" | "not_found" | "error";
+export type ParishCodeResult =
+  | "ok"
+  | "auth_required"
+  | "too_short"
+  | "not_found"
+  | "locked"
+  | "error";
 
 export async function listParishCodes(): Promise<ParishCodeInfo[]> {
   const { data, error } = await supabase.rpc("parish_codes_list");
@@ -27,6 +34,11 @@ function toResult(
     return { result: "too_short", message: "The access code must be at least 6 characters." };
   if (data === "not_found")
     return { result: "not_found", message: "That parish could not be found." };
+  if (data === "locked")
+    return {
+      result: "locked",
+      message: "Too many incorrect attempts with the admin access code. Try again in 15 minutes.",
+    };
   if (data === "ok") return { result: "ok", message: "Parish access code saved." };
   return { result: "error", message: "Unexpected response from the server." };
 }

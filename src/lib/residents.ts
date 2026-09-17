@@ -35,8 +35,18 @@ const SEARCH_COLUMNS = [
   "bec_cell_name",
 ] as const;
 
+// Strip characters that could break the PostgREST .or() filter grammar or
+// inject unexpected wildcards/metadata, then cap the length.
+function sanitizeSearchQuery(q: string): string {
+  return q
+    .replace(/[%(),;=]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+
 export async function searchResidents(query = ""): Promise<Resident[]> {
-  const q = query.trim();
+  const q = sanitizeSearchQuery(query);
   let request = supabase
     .from("residents")
     .select("*")

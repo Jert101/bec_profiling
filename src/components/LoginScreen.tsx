@@ -27,8 +27,8 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
-      const s = await login(pin.trim());
-      if (!s) setError("Access code not recognized.");
+      const res = await login(pin.trim());
+      if (!res.session) setError(res.message ?? "Access code not recognized.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not sign in.");
     } finally {

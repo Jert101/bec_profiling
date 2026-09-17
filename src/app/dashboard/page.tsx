@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Save, ShieldCheck, ShieldOff, SlidersHorizontal, X } from "lucide-react";
+import { Check, Copy, Eye, EyeOff, KeyRound, Save, ShieldCheck, ShieldOff, SlidersHorizontal, X } from "lucide-react";
 import type { FormFieldConfig } from "@/lib/types";
 import { getFormFields, updateFormFields } from "@/lib/residents";
 import { DEFAULT_FORM_FIELDS, groupBySection, isLocked, parseOptions } from "@/lib/formConfig";
@@ -24,6 +24,20 @@ function CodesSection() {
   const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [adminAuth, setAdminAuth] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState<Record<number, boolean>>({});
+  const [copied, setCopied] = useState<number | null>(null);
+
+  const copyCode = async (p: ParishCodeInfo) => {
+    const code = p.code_plain ?? "";
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(p.parish_id);
+      setTimeout(() => setCopied((prev) => (prev === p.parish_id ? null : prev)), 1500);
+    } catch {
+      showToast("Could not copy the access code.", true);
+    }
+  };
 
   const refresh = async () => {
     try {
@@ -113,7 +127,8 @@ function CodesSection() {
     <Section title="Parish access codes">
       <p className="mb-4 text-sm text-slate-light">
         Give each parish its own access code. Holders can only view and manage records belonging
-        to their parish. Codes must be at least 6 characters and are stored hashed.
+        to their parish. Codes must be at least 6 characters, are stored hashed (bcrypt), and are
+        shown here so you can share them with each parish.
       </p>
 
       <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -188,6 +203,52 @@ function CodesSection() {
                   )}
                 </span>
               </div>
+
+              {p.code_set && (
+                <div className="mb-3 flex items-center gap-2 rounded-md border border-sage/30 bg-white px-3 py-2">
+                  <KeyRound className="h-4 w-4 shrink-0 text-sage" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-light">
+                    Access code
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-mono text-sm tracking-[0.25em] text-teal-dark">
+                    {p.code_plain
+                      ? revealed[p.parish_id]
+                        ? p.code_plain
+                        : "••••••"
+                      : "Rotate the code to reveal it"}
+                  </span>
+                  {p.code_plain && (
+                    <button
+                      type="button"
+                      aria-label={revealed[p.parish_id] ? "Hide access code" : "Show access code"}
+                      onClick={() =>
+                        setRevealed((prev) => ({ ...prev, [p.parish_id]: !prev[p.parish_id] }))
+                      }
+                      className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded border border-line text-slate-light transition hover:border-teal hover:text-teal"
+                    >
+                      {revealed[p.parish_id] ? (
+                        <EyeOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <Eye className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+                  {p.code_plain && (
+                    <button
+                      type="button"
+                      aria-label="Copy access code"
+                      onClick={() => copyCode(p)}
+                      className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded border border-line text-slate-light transition hover:border-teal hover:text-teal"
+                    >
+                      {copied === p.parish_id ? (
+                        <Check className="h-3.5 w-3.5 text-sage" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-wrap items-center gap-2">
                 <input

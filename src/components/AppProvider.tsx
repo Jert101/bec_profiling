@@ -2,8 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { PageKey, Session } from "@/lib/types";
-import { getSessionSnapshot, subscribeSession, loginWithPin, logoutSession, changeUserCode } from "@/lib/auth";
-import type { ChangeCodeResult } from "@/lib/auth";
+import { getSessionSnapshot, subscribeSession, loginWithPin, logoutSession, changeUserCode, touchSession } from "@/lib/auth";
+import type { ChangeCodeResult, LoginResult } from "@/lib/auth";
 import { ALL_PAGES, getRolePages } from "@/lib/permissions";
 
 interface ToastState {
@@ -21,7 +21,7 @@ interface AppContextValue {
   ready: boolean;
   pages: PageKey[];
   pagesReady: boolean;
-  login: (pin: string) => Promise<Session | null>;
+  login: (pin: string) => Promise<LoginResult>;
   logout: () => void;
   changeCode: (
     targetKey: "admin" | "moderator",
@@ -37,7 +37,7 @@ const AppContext = createContext<AppContextValue>({
   ready: false,
   pages: [],
   pagesReady: false,
-  login: async () => null,
+  login: async () => ({ session: null, error: "error" }),
   logout: () => {},
   changeCode: async () => ({ result: "error", message: "" }),
   showToast: () => {},
@@ -72,6 +72,21 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       .finally(() => alive && setPagesReady(true));
     return () => {
       alive = false;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+    const id = setInterval(() => touchSession(), 30_000);
+    const onActivity = () => touchSession();
+    window.addEventListener("pointermove", onActivity);
+    window.addEventListener("pointerdown", onActivity);
+    window.addEventListener("keydown", onActivity);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("pointermove", onActivity);
+      window.removeEventListener("pointerdown", onActivity);
+      window.removeEventListener("keydown", onActivity);
     };
   }, [session]);
 
