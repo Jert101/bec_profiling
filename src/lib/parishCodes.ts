@@ -15,6 +15,7 @@ export type ParishCodeResult =
   | "too_short"
   | "not_found"
   | "locked"
+  | "duplicate"
   | "error";
 
 export async function listParishCodes(): Promise<ParishCodeInfo[]> {
@@ -39,6 +40,8 @@ function toResult(
       result: "locked",
       message: "Too many incorrect attempts with the admin access code. Try again in 15 minutes.",
     };
+  if (data === "duplicate")
+    return { result: "duplicate", message: "That access code is already used by another parish." };
   if (data === "ok") return { result: "ok", message: "Parish access code saved." };
   return { result: "error", message: "Unexpected response from the server." };
 }
