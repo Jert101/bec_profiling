@@ -107,6 +107,16 @@ export type Role = "admin" | "moderator";
 
 export type PageKey = "dashboard" | "records" | "stats";
 
+export type DuplicateMatch = {
+  id: number;
+  name: string;
+  dateOfBirth: string | null;
+  barangay: string | null;
+  parish: string | null;
+  vicariate: string | null;
+  match: "exact_dob" | "same_name";
+};
+
 export interface Session {
   role: Role;
 }

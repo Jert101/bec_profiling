@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
-import type { FamilyMember, FormFieldConfig, ResidentForm, Vicariate } from "@/lib/types";
+import { AlertTriangle, CheckCircle2, Search, Trash2 } from "lucide-react";
+import type { DuplicateMatch, FamilyMember, FormFieldConfig, ResidentForm, Vicariate } from "@/lib/types";
 import { initials, fullName } from "@/lib/types";
 import {
   createResident,
@@ -17,6 +17,7 @@ import {
   createFamilyMembers,
   updateFamilyMember,
   deleteFamilyMembers,
+  findPotentialDuplicates,
 } from "@/lib/residents";
 import { normalizeFields, groupBySection, DEFAULT_FORM_FIELDS } from "@/lib/formConfig";
 import { useApp } from "@/components/AppProvider";
@@ -48,6 +49,44 @@ export default function RecordForm({
     normalizeFields(DEFAULT_FORM_FIELDS),
   );
   const [vicariates, setVicariates] = useState<Vicariate[]>([]);
+  const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+  const [dupLoading, setDupLoading] = useState(false);
+  const [dupDone, setDupDone] = useState(false);
+  const [dupAcknowledged, setDupAcknowledged] = useState(false);
+  const dupBoxRef = useRef<HTMLDivElement | null>(null);
+
+  const dupBlocking = duplicates.some((d) => d.match === "exact_dob");
+
+  useEffect(() => {
+    const firstName = form.first_name.trim();
+    const lastName = form.last_name.trim();
+    const t = setTimeout(() => {
+      if (!firstName || !lastName) {
+        setDuplicates([]);
+        setDupDone(false);
+        setDupAcknowledged(false);
+        return;
+      }
+      setDupLoading(true);
+      findPotentialDuplicates({
+        firstName,
+        lastName,
+        dateOfBirth: form.date_of_birth,
+        excludeId: isNew ? null : id,
+      })
+        .then((matches) => {
+          setDuplicates(matches);
+          setDupDone(true);
+          setDupAcknowledged(false);
+        })
+        .catch(() => {
+          setDuplicates([]);
+          setDupDone(false);
+        })
+        .finally(() => setDupLoading(false));
+    }, 700);
+    return () => clearTimeout(t);
+  }, [form.first_name, form.last_name, form.date_of_birth, isNew, id]);
 
   useEffect(() => {
     let alive = true;
@@ -127,6 +166,11 @@ export default function RecordForm({
     const validation = validateForm(form, fields);
     if (validation) {
       showToast(validation, true);
+      return;
+    }
+    if (dupBlocking && !dupAcknowledged) {
+      showToast("Possible duplicate found — review before saving.", true);
+      dupBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setSaving(true);
@@ -379,6 +423,74 @@ export default function RecordForm({
             </button>
           )}
         </div>
+      </div>
+
+      <div ref={dupBoxRef} className="mb-6">
+        {dupLoading && duplicates.length === 0 && (
+          <div className="flex items-center gap-2 rounded-md border border-line bg-white px-4 py-3 text-sm text-slate-light">
+            <Search className="h-4 w-4 animate-pulse" />
+            Checking for duplicate records...
+          </div>
+        )}
+
+        {!dupLoading && dupDone && duplicates.length === 0 && (
+          <div className="flex items-center gap-2 text-xs text-sage">
+            <CheckCircle2 className="h-4 w-4" />
+            No matching records found.
+          </div>
+        )}
+
+        {duplicates.length > 0 && (
+          <div
+            className={`rounded-md border px-4 py-4 ${
+              dupBlocking ? "border-danger/30 bg-[#FCEEEC]" : "border-gold bg-gold-light/50"
+            }`}
+          >
+            <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-slate">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
+              Possible duplicate {duplicates.length === 1 ? "record" : "records"} found
+            </div>
+            <p className="mb-3 text-xs text-slate-light">
+              {dupBlocking
+                ? "A record with the same name and birthdate already exists. Confirm below if this is a different person."
+                : "Same name found without a matching birthdate. Please verify before saving."}
+            </p>
+            <ul className="space-y-2">
+              {duplicates.map((d) => (
+                <li key={d.id} className="flex flex-wrap items-center gap-2 text-sm">
+                  <Link
+                    href={`/records/${d.id}`}
+                    className="font-semibold text-teal underline-offset-2 hover:underline"
+                  >
+                    {d.name}
+                  </Link>
+                  <span className="rounded bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-light">
+                    {d.match === "exact_dob" ? "Same birthdate" : "Name match only"}
+                  </span>
+                  {d.dateOfBirth && (
+                    <span className="text-xs text-slate-light">DOB {d.dateOfBirth}</span>
+                  )}
+                  {(d.vicariate || d.parish || d.barangay) && (
+                    <span className="text-xs text-slate-light">
+                      {[d.parish, d.vicariate, d.barangay].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {dupBlocking && (
+              <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={dupAcknowledged}
+                  onChange={(e) => setDupAcknowledged(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-teal"
+                />
+                <span>This is a different person — save anyway.</span>
+              </label>
+            )}
+          </div>
+        )}
       </div>
 
       <form

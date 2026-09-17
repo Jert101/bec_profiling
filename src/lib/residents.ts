@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
+import { fullName } from "./types";
 import type {
+  DuplicateMatch,
   FamilyMember,
   FamilyMemberForm,
   FamilyStats,
@@ -49,6 +51,48 @@ export async function getResident(id: number): Promise<Resident | null> {
     .maybeSingle();
   if (error) throw new Error(error.message);
   return (data as Resident) ?? null;
+}
+
+const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
+export async function findPotentialDuplicates({
+  firstName,
+  lastName,
+  dateOfBirth,
+  excludeId,
+}: {
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string | null;
+  excludeId?: number | null;
+}): Promise<DuplicateMatch[]> {
+  const fn = normName(firstName);
+  const ln = normName(lastName);
+  const dob = (dateOfBirth ?? "").trim() || null;
+  if (!fn || !ln) return [];
+
+  const { data, error } = await supabase
+    .from("residents")
+    .select("id, first_name, middle_name, last_name, suffix, date_of_birth, barangay, parish, vicariate");
+  if (error) throw new Error(error.message);
+
+  const matches: DuplicateMatch[] = [];
+  for (const r of data ?? []) {
+    if (excludeId && r.id === excludeId) continue;
+    if (normName(r.first_name ?? "") !== fn || normName(r.last_name ?? "") !== ln) continue;
+    const otherDob = (r.date_of_birth ?? "") || null;
+    const exact = !!dob && !!otherDob && dob === otherDob;
+    matches.push({
+      id: r.id,
+      name: fullName(r),
+      dateOfBirth: otherDob,
+      barangay: r.barangay ?? null,
+      parish: r.parish ?? null,
+      vicariate: r.vicariate ?? null,
+      match: exact ? "exact_dob" : "same_name",
+    });
+  }
+  return matches;
 }
 
 export async function getTotalCount(): Promise<number> {
