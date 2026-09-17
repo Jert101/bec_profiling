@@ -1,52 +1,34 @@
 -- 0016_seed_parish_codes_plain.sql
--- Seeder that guarantees every parish has a displayable access code.
+-- Generates a random 6-digit access code for every parish that does not yet
+-- have a displayable one, stores it as bcrypt hash + plaintext, and prints the
+-- full code list so the administrator can save and share it.
 --
--- For every parish whose current code has no stored plaintext (e.g. codes
--- seeded by 0013 before the plaintext column existed), a fresh random 6-digit
--- code is generated, stored as both bcrypt hash and plaintext, and printed as
--- a result grid for the administrator.
---
--- Safe to re-run; parishes that already have a visible code are left unchanged.
--- Run AFTER 0015_show_parish_codes.sql.
+-- Safe to re-run: parishes that already have a visible code are untouched.
+-- No temporary tables are used (each statement may run on a different pooled
+-- connection in the Supabase SQL Editor, which breaks session temp tables).
 
 set search_path to public, extensions;
 
-create temp table seeded_parish_codes (
-  parish_id   bigint,
-  parish_name text,
-  access_code text
-);
+-- Generate codes for parishes without a displayable code, and store both the
+-- bcrypt hash and the plaintext.
+insert into parish_codes (parish_id, code_hash, code_plain)
+select p.id,
+       extensions.crypt(c.code, extensions.gen_salt('bf', 10)),
+       c.code
+  from parishes p
+  cross join lateral (
+    select lpad(floor(random() * 900000 + 100000)::int::text, 6, '0') as code
+  ) c
+ where not exists (
+   select 1 from parish_codes pc
+    where pc.parish_id = p.id
+      and pc.code_plain is not null
+ );
 
-do $$
-declare
-  p         record;
-  new_code  text;
-begin
-  for p in
-    select p2.id, p2.name
-      from parishes p2
-     order by p2.id
-  loop
-    if not exists (
-      select 1 from parish_codes pc
-       where pc.parish_id = p.id
-         and pc.code_plain is not null
-    ) then
-      new_code := lpad(floor(random() * 900000 + 100000)::int::text, 6, '0');
-      insert into parish_codes (parish_id, code_hash, code_plain)
-      values (p.id, crypt(new_code, gen_salt('bf', 10)), new_code)
-      on conflict (parish_id)
-      do update set code_hash = excluded.code_hash,
-                    code_plain = excluded.code_plain;
-      insert into seeded_parish_codes (parish_id, parish_name, access_code)
-      values (p.id, p.name, new_code);
-    end if;
-  end loop;
-end
-$$;
-
-select parish_id, parish_name, access_code
-  from seeded_parish_codes
- order by parish_id;
-
-drop table seeded_parish_codes;
+-- Print every parish and its current access code (NULL = not set yet).
+select p.id as parish_id,
+       p.name as parish_name,
+       pc.code_plain as access_code
+  from parishes p
+  left join parish_codes pc on pc.parish_id = p.id
+ order by p.id;
