@@ -1,7 +1,8 @@
 import { supabase } from "./supabase";
+import { logActivity } from "./activity";
 import type { PageKey, Role } from "./types";
 
-export const ALL_PAGES: PageKey[] = ["dashboard", "records", "stats"];
+export const ALL_PAGES: PageKey[] = ["dashboard", "records", "stats", "logs"];
 
 export async function getRolePages(role: Role): Promise<PageKey[]> {
   const { data, error } = await supabase
@@ -16,9 +17,17 @@ export async function getRolePages(role: Role): Promise<PageKey[]> {
 export async function setRolePages(role: Role, pages: PageKey[]): Promise<void> {
   const { error: delError } = await supabase.from("role_pages").delete().eq("role", role);
   if (delError) throw new Error(delError.message);
-  if (pages.length === 0) return;
+  if (pages.length === 0) {
+    await logActivity({ action: "role_pages.updated", entity: "role_pages", details: { role, pages: [] } });
+    return;
+  }
   const { error: insError } = await supabase
     .from("role_pages")
     .insert(pages.map((page) => ({ role, page })));
   if (insError) throw new Error(insError.message);
+  await logActivity({
+    action: "role_pages.updated",
+    entity: "role_pages",
+    details: { role, pages },
+  });
 }

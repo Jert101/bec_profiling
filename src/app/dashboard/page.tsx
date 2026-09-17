@@ -300,7 +300,13 @@ function PageAccessSection() {
     setPages((prev) => (prev.includes(page) ? prev.filter((p) => p !== page) : [...prev, page]));
 
   const label = (page: PageKey) =>
-    page === "dashboard" ? "Dashboard" : page === "records" ? "Records" : "Stats";
+    page === "dashboard"
+      ? "Dashboard"
+      : page === "records"
+        ? "Records"
+        : page === "stats"
+          ? "Stats"
+          : "Activity Log";
 
   const save = async () => {
     setSaving(true);

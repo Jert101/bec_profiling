@@ -19,7 +19,9 @@ export default function HomePage() {
             ? "/records"
             : pages.includes("stats")
               ? "/stats"
-              : "/records";
+              : pages.includes("logs")
+                ? "/timestamp"
+                : "/records";
     router.replace(first);
   }, [session, pages, pagesReady, router]);
 

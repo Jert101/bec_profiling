@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { logActivity } from "./activity";
 import type { Role, Session } from "./types";
 
 const SESSION_KEY = "resident_profiler_session";
@@ -44,16 +45,22 @@ function commit(session: Session | null) {
 }
 
 export function logoutSession() {
+  const role = current?.role ?? null;
   commit(null);
+  logActivity({ action: "auth.logout", entity: "auth", details: role ? { role } : null });
 }
 
 export async function loginWithPin(pin: string): Promise<Session | null> {
   const { data, error } = await supabase.rpc("app_login", { pin });
   if (error) throw new Error(error.message);
   const role = data as Role | null;
-  if (!role || (role !== "admin" && role !== "moderator")) return null;
+  if (!role || (role !== "admin" && role !== "moderator")) {
+    logActivity({ action: "auth.login_failed", entity: "auth" });
+    return null;
+  }
   const session: Session = { role };
   commit(session);
+  logActivity({ action: "auth.login", entity: "auth", details: { role } });
   return session;
 }
 
@@ -74,5 +81,6 @@ export async function changeUserCode(
   if (data === "auth_required") return { result: "auth_required", message: "Your admin access code is incorrect." };
   if (data === "invalid_pin") return { result: "invalid_pin", message: "The new access code cannot be empty." };
   if (data === "not_found") return { result: "not_found", message: "That user could not be found." };
+  await logActivity({ action: "code.changed", entity: "auth", details: { targetKey } });
   return { result: "ok", message: `${data} access code updated.` };
 }

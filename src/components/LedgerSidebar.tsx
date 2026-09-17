@@ -12,6 +12,7 @@ const TAB_DEFS: Record<PageKey, { label: string; hrefFor: (isAdmin: boolean) => 
   dashboard: { label: "Dashboard", hrefFor: (isAdmin) => (isAdmin ? "/dashboard" : "/home") },
   records: { label: "Records", hrefFor: () => "/records" },
   stats: { label: "Stats", hrefFor: () => "/stats" },
+  logs: { label: "Activity Log", hrefFor: () => "/timestamp" },
 };
 
 export default function LedgerSidebar() {
@@ -40,7 +41,9 @@ export default function LedgerSidebar() {
     ? "dashboard"
     : pathname.startsWith("/stats")
       ? "stats"
-      : "records";
+      : pathname.startsWith("/timestamp")
+        ? "logs"
+        : "records";
 
   return (
     <nav className="flex flex-col items-center gap-1 bg-teal pt-5 text-cream">

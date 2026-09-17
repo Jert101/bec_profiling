@@ -105,7 +105,7 @@ export interface FormFieldConfig {
 
 export type Role = "admin" | "moderator";
 
-export type PageKey = "dashboard" | "records" | "stats";
+export type PageKey = "dashboard" | "records" | "stats" | "logs";
 
 export type DuplicateMatch = {
   id: number;

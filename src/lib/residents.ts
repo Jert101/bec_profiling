@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { logActivity } from "./activity";
 import { fullName } from "./types";
 import type {
   DuplicateMatch,
@@ -184,6 +185,11 @@ export async function getFormFields(): Promise<FormFieldConfig[]> {
 export async function updateFormFields(rows: FormFieldConfig[]): Promise<void> {
   const { error } = await supabase.from("form_fields").upsert(rows);
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "form_fields.updated",
+    entity: "form_fields",
+    details: { count: rows.length },
+  });
 }
 
 export async function getVicariates(): Promise<Vicariate[]> {
@@ -205,39 +211,98 @@ export async function getVicariates(): Promise<Vicariate[]> {
 export async function addVicariate(name: string): Promise<void> {
   const { error } = await supabase.from("vicariates").insert({ name: name.trim() });
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "vicariate.created",
+    entity: "vicariate",
+    details: { name: name.trim() },
+  });
 }
 
 export async function renameVicariate(id: number, name: string): Promise<void> {
+  const { data: before } = await supabase
+    .from("vicariates")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase
     .from("vicariates")
     .update({ name: name.trim() })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "vicariate.renamed",
+    entity: "vicariate",
+    entityId: id,
+    details: { oldName: before?.name ?? null, name: name.trim() },
+  });
 }
 
 export async function deleteVicariate(id: number): Promise<void> {
+  const { data: before } = await supabase
+    .from("vicariates")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("vicariates").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "vicariate.deleted",
+    entity: "vicariate",
+    entityId: id,
+    details: { name: before?.name ?? null },
+  });
 }
 
 export async function addParish(vicariateId: number, name: string): Promise<void> {
+  const { data: vicValue } = await supabase
+    .from("vicariates")
+    .select("name")
+    .eq("id", vicariateId)
+    .maybeSingle();
   const { error } = await supabase
     .from("parishes")
     .insert({ vicariate_id: vicariateId, name: name.trim() });
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "parish.created",
+    entity: "parish",
+    details: { name: name.trim(), vicariate: vicValue?.name ?? null },
+  });
 }
 
 export async function renameParish(id: number, name: string): Promise<void> {
+  const { data: before } = await supabase
+    .from("parishes")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase
     .from("parishes")
     .update({ name: name.trim() })
     .eq("id", id);
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "parish.renamed",
+    entity: "parish",
+    entityId: id,
+    details: { oldName: before?.name ?? null, name: name.trim() },
+  });
 }
 
 export async function deleteParish(id: number): Promise<void> {
+  const { data: before } = await supabase
+    .from("parishes")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("parishes").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "parish.deleted",
+    entity: "parish",
+    entityId: id,
+    details: { name: before?.name ?? null },
+  });
 }
 
 export async function createResident(form: ResidentForm): Promise<Resident> {
@@ -247,6 +312,17 @@ export async function createResident(form: ResidentForm): Promise<Resident> {
     .select()
     .single();
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "resident.created",
+    entity: "resident",
+    entityId: data.id,
+    details: {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      barangay: data.barangay ?? null,
+      parish: data.parish ?? null,
+    },
+  });
   return data as Resident;
 }
 
@@ -258,12 +334,37 @@ export async function updateResident(id: number, form: ResidentForm): Promise<Re
     .select()
     .single();
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "resident.updated",
+    entity: "resident",
+    entityId: data.id,
+    details: {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      barangay: data.barangay ?? null,
+      parish: data.parish ?? null,
+    },
+  });
   return data as Resident;
 }
 
 export async function deleteResident(id: number): Promise<void> {
+  const { data: before } = await supabase
+    .from("residents")
+    .select("id, first_name, last_name")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("residents").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "resident.deleted",
+    entity: "resident",
+    entityId: id,
+    details: {
+      first_name: before?.first_name ?? "",
+      last_name: before?.last_name ?? "",
+    },
+  });
 }
 
 function familyMemberToDb(form: FamilyMemberForm) {
@@ -290,11 +391,26 @@ export async function getFamilyMembers(residentId: number): Promise<FamilyMember
   return (data ?? []) as FamilyMember[];
 }
 
+async function residentRef(id: number): Promise<Record<string, unknown>> {
+  const { data } = await supabase
+    .from("residents")
+    .select("first_name, last_name")
+    .eq("id", id)
+    .maybeSingle();
+  return { first_name: data?.first_name ?? "", last_name: data?.last_name ?? "" };
+}
+
 export async function createFamilyMember(residentId: number, form: FamilyMemberForm): Promise<void> {
   const { error } = await supabase
     .from("family_members")
     .insert({ resident_id: residentId, ...familyMemberToDb(form) });
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "family_members.created",
+    entity: "family_member",
+    entityId: residentId,
+    details: { count: 1, ...(await residentRef(residentId)) },
+  });
 }
 
 export async function createFamilyMembers(residentId: number, forms: FamilyMemberForm[]): Promise<void> {
@@ -303,26 +419,68 @@ export async function createFamilyMembers(residentId: number, forms: FamilyMembe
     .from("family_members")
     .insert(forms.map((f) => ({ resident_id: residentId, ...familyMemberToDb(f) })));
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "family_members.created",
+    entity: "family_member",
+    entityId: residentId,
+    details: { count: forms.length, ...(await residentRef(residentId)) },
+  });
 }
 
 export async function updateFamilyMember(id: number, form: FamilyMemberForm): Promise<void> {
+  const { data: before } = await supabase
+    .from("family_members")
+    .select("resident_id")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase
     .from("family_members")
     .update(familyMemberToDb(form))
     .eq("id", id);
   if (error) throw new Error(error.message);
+  if (before) {
+    await logActivity({
+      action: "family_member.updated",
+      entity: "family_member",
+      entityId: before.resident_id,
+      details: { member: form.full_name, ...(await residentRef(before.resident_id)) },
+    });
+  }
 }
 
 export async function deleteFamilyMembers(ids: number[]): Promise<void> {
   if (ids.length === 0) return;
+  const { data: before } = await supabase
+    .from("family_members")
+    .select("resident_id")
+    .in("id", ids)
+    .maybeSingle();
   const { error } = await supabase.from("family_members").delete().in("id", ids);
   if (error) throw new Error(error.message);
+  if (before) {
+    await logActivity({
+      action: "family_members.deleted",
+      entity: "family_member",
+      entityId: before.resident_id,
+      details: { count: ids.length, ...(await residentRef(before.resident_id)) },
+    });
+  }
 }
 
 export async function deleteFamilyMembersByResident(residentId: number): Promise<void> {
+  const { data: before } = await supabase
+    .from("family_members")
+    .select("id")
+    .eq("resident_id", residentId);
   const { error } = await supabase
     .from("family_members")
     .delete()
     .eq("resident_id", residentId);
   if (error) throw new Error(error.message);
+  await logActivity({
+    action: "family_members.deleted",
+    entity: "family_member",
+    entityId: residentId,
+    details: { count: before?.length ?? 0, ...(await residentRef(residentId)) },
+  });
 }
