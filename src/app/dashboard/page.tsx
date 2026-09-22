@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Copy, Eye, EyeOff, KeyRound, Save, ShieldCheck, ShieldOff, SlidersHorizontal, X } from "lucide-react";
+import { Check, Copy, Download, Eye, EyeOff, KeyRound, Save, ShieldCheck, ShieldOff, SlidersHorizontal, X } from "lucide-react";
 import type { FormFieldConfig } from "@/lib/types";
 import { getFormFields, updateFormFields } from "@/lib/residents";
 import { DEFAULT_FORM_FIELDS, groupBySection, isLocked, parseOptions } from "@/lib/formConfig";
@@ -9,6 +9,7 @@ import { useApp } from "@/components/AppProvider";
 import RoleGuard from "@/components/RoleGuard";
 import Section from "@/components/ui/Section";
 import VicariateManager from "@/components/VicariateManager";
+import { downloadResidentFormDoc } from "@/lib/formDoc";
 import {
   listParishCodes,
   setParishCode,
@@ -294,6 +295,19 @@ function FieldsSection() {
   );
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const downloadForm = async () => {
+    setDownloading(true);
+    try {
+      await downloadResidentFormDoc();
+      showToast("Form downloaded");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Could not download the form.", true);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -444,7 +458,7 @@ function FieldsSection() {
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         <button
           onClick={save}
           disabled={saving || !loaded}
@@ -452,6 +466,15 @@ function FieldsSection() {
         >
           <Save className="h-4 w-4" />
           {saving ? "Saving..." : "Save form fields"}
+        </button>
+        <button
+          onClick={downloadForm}
+          disabled={downloading || !loaded}
+          title="Download this form as a Word document (reflects the last saved field configuration)"
+          className="flex cursor-pointer items-center gap-2 rounded-md border border-teal bg-white px-5 py-2.5 text-sm font-semibold text-teal transition hover:bg-teal hover:text-cream disabled:opacity-60"
+        >
+          <Download className="h-4 w-4" />
+          {downloading ? "Preparing..." : "Download form (.docx)"}
         </button>
       </div>
     </Section>
