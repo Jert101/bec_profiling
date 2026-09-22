@@ -19,6 +19,9 @@ import { groupBySection } from "./formConfig";
 const AC = "☐";
 const REQUIRED_NOTE = "(required)";
 
+// Picklist fields that should be blank write-in lines instead of a checklist.
+const WRITE_IN_FIELDS = new Set(["civil_status", "sex", "parish"]);
+
 const TEAL = "1F3B38";
 const TEAL_SOFT = "4A6E6A";
 const GOLD = "B8860B";
@@ -166,6 +169,9 @@ function fieldChildren(
   switch (field.type) {
     case "select":
     case "multiselect": {
+      if (WRITE_IN_FIELDS.has(field.name)) {
+        return [labelPara(field.label, field.required), answerLine(70)];
+      }
       if (options.length === 0) {
         return [labelPara(field.label, field.required), answerLine(70)];
       }
